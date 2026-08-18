@@ -1,0 +1,1926 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NexGen Quant | Consejería de Inversión Inteligente</title>
+    
+    <!-- Dependencies: Tailwind CSS, FontAwesome 6, Chart.js, Google Fonts -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
+                    },
+                    colors: {
+                        fintech: {
+                            bg: '#030712',
+                            surface: '#0B132B',
+                            card: '#111827',
+                            cardBorder: '#1F2937',
+                            cardHover: '#374151',
+                            emerald: '#10B981',
+                            emeraldDark: '#059669',
+                            emeraldGlow: 'rgba(16, 185, 129, 0.15)',
+                            indigo: '#6366F1',
+                            indigoDark: '#4F46E5',
+                            amber: '#F59E0B',
+                            rose: '#F43F5E',
+                            cyan: '#06B6D4',
+                            textMuted: '#9CA3AF',
+                            textHeading: '#F9FAFB'
+                        }
+                    },
+                    boxShadow: {
+                        'glow-emerald': '0 0 25px -5px rgba(16, 185, 129, 0.3)',
+                        'glow-indigo': '0 0 25px -5px rgba(99, 102, 241, 0.3)',
+                        'fintech-card': '0 10px 30px -10px rgba(0, 0, 0, 0.5)'
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.3s ease-out forwards',
+                        'slide-up': 'slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards'
+                    },
+                    keyframes: {
+                        fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
+                        slideUp: { '0%': { opacity: '0', transform: 'translateY(12px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { background-color: #030712; color: #F9FAFB; font-family: 'Plus Jakarta Sans', sans-serif; overflow-x: hidden; }
+        .glass-card { background: rgba(17, 24, 39, 0.85); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .glass-card-accent { background: linear-gradient(135deg, rgba(17, 24, 39, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%); border: 1px solid rgba(16, 185, 129, 0.25); }
+        .glass-panel { background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .text-gradient-emerald { background: linear-gradient(135deg, #34D399 0%, #10B981 50%, #059669 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .text-gradient-indigo { background: linear-gradient(135deg, #818CF8 0%, #6366F1 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #0B132B; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
+        .clickable-card { transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
+        .clickable-card:hover { transform: translateY(-3px); border-color: rgba(16, 185, 129, 0.4); box-shadow: 0 12px 30px -10px rgba(16, 185, 129, 0.15); }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased bg-fintech-bg text-slate-100">
+
+    <header class="fixed w-full top-0 z-40 glass-card border-b border-fintech-cardBorder/60 h-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between">
+            
+            <!-- Logo & Brand -->
+            <div class="flex items-center gap-3 cursor-pointer group" onclick="switchView('advisor')">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-fintech-emeraldDark via-fintech-emerald to-emerald-400 flex items-center justify-center shadow-glow-emerald transition-transform group-hover:scale-105">
+                    <i class="fas fa-chart-line text-slate-950 text-lg font-extrabold"></i>
+                </div>
+                <div class="flex flex-col">
+                    <span class="font-extrabold text-xl tracking-tight leading-none text-white">NexGen<span class="text-fintech-emerald">Quant</span></span>
+                    <span class="text-[10px] text-fintech-textMuted tracking-wider uppercase font-semibold mt-0.5">Consejería de Inversión IA</span>
+                </div>
+            </div>
+            
+            <!-- Nav Controls: Advisor, Investment Guide, Notifications, User Profile -->
+            <div class="flex items-center gap-2 sm:gap-3">
+                
+                <!-- Toggle View: Advisor Mode -->
+                <button onclick="switchView('advisor')" id="nav-advisor-btn" class="flex items-center gap-2 px-3 py-2 rounded-xl bg-fintech-emerald/20 text-emerald-400 border border-fintech-emerald/40 transition-all text-xs font-bold shadow-sm">
+                    <i class="fas fa-robot text-sm"></i>
+                    <span class="hidden sm:inline">Consejero IA</span>
+                </button>
+
+                <!-- Dedicated Page: Guía de Inversión -->
+                <button onclick="switchView('guide')" id="nav-guide-btn" class="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-300 border border-slate-700/80 transition-all text-xs font-semibold shadow-sm">
+                    <i class="fas fa-graduation-cap text-indigo-400 text-sm"></i>
+                    <span class="hidden sm:inline">Guía de Inversión</span>
+                </button>
+
+                <div class="h-6 w-px bg-slate-800 mx-1"></div>
+
+                <!-- Notifications Center Bell -->
+                <div class="relative">
+                    <button onclick="toggleNotificationsMenu()" class="w-10 h-10 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-slate-300 hover:text-white flex items-center justify-center relative transition-all">
+                        <i class="fas fa-bell text-sm"></i>
+                        <span id="notif-badge" class="absolute -top-1 -right-1 w-5 h-5 bg-emerald-500 text-slate-950 text-[10px] font-black rounded-full flex items-center justify-center border-2 border-slate-950">3</span>
+                    </button>
+
+                    <!-- Notifications Dropdown Box -->
+                    <div id="notif-dropdown" class="hidden absolute right-0 mt-3 w-80 sm:w-96 glass-card rounded-2xl border border-slate-800 shadow-2xl z-50 p-4 animate-fade-in">
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-chart-line text-emerald-400 text-xs"></i>
+                                <h4 class="font-bold text-white text-xs uppercase tracking-wider">Cambios en Métricas Guardadas</h4>
+                            </div>
+                            <button onclick="clearNotifications()" class="text-[10px] text-slate-400 hover:text-emerald-400 font-semibold">Marcar leídas</button>
+                        </div>
+                        <div class="space-y-2.5 max-h-72 overflow-y-auto custom-scrollbar" id="notif-list">
+                            <!-- Injected by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User Profile Menu -->
+                <button onclick="openUserModal()" class="flex items-center gap-2.5 pl-1.5 pr-3 py-1 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700/80 transition-all text-xs text-white">
+                    <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-indigo-500 to-purple-500 text-white font-bold flex items-center justify-center text-xs shadow-md">
+                        AW
+                    </div>
+                    <span class="hidden md:inline font-semibold text-slate-200" id="header-user-name">Alex Wright</span>
+                    <i class="fas fa-chevron-down text-[10px] text-slate-400 ml-0.5"></i>
+                </button>
+
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow pt-20 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full flex flex-col items-center">
+
+        <!-- ==================================================================== -->
+        <!-- VIEW 1: CONSEJERO DE INVERSIÓN (ADVISOR MAIN INTERFACE)             -->
+        <!-- ==================================================================== -->
+        <div id="advisor-view" class="w-full flex flex-col items-center">
+            
+            <!-- SECCIÓN DE BÚSQUEDA Y CONSULTA -->
+            <div class="w-full max-w-3xl mb-8 flex flex-col items-center animate-fade-in" id="search-container">
+                
+                <div class="text-center mb-6" id="main-title-container">
+                    <span class="text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 mb-3 inline-block">
+                        <i class="fas fa-robot mr-1"></i> Consejero Financiero Cuantitativo
+                    </span>
+                    <h1 class="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight mt-1" id="main-title">
+                        ¿Qué movimiento deseas <span class="text-gradient-emerald">ejecutar hoy?</span>
+                    </h1>
+                    <p class="text-sm text-slate-400 mt-2 max-w-xl mx-auto" id="main-subtitle">
+                        Ingresa tu monto de inversión o sector objetivo. Obtendrás un plan de compra exacto, con montos por activo, puntos de entrada y capacidad de explorar cada sector hasta el nivel de empresa.
+                    </p>
+                </div>
+                
+                <!-- Dynamic Prompt Input -->
+                <div class="w-full relative glass-card rounded-2xl p-2.5 transition-all focus-within:border-fintech-emerald focus-within:ring-2 focus-within:ring-fintech-emerald/20 flex flex-col sm:flex-row items-center gap-2 shadow-fintech-card">
+                    <div class="hidden sm:flex items-center pl-3 text-fintech-emerald">
+                        <i class="fas fa-coins text-xl"></i>
+                    </div>
+                    <input id="prompt-input" type="text" class="w-full bg-transparent border-none outline-none text-white px-3 py-3 text-base sm:text-lg placeholder-slate-500 font-medium" placeholder="Ej: Deseo invertir $20,000 a mediano plazo..." />
+                    <button onclick="processPrompt()" class="w-full sm:w-auto px-7 py-3.5 bg-gradient-to-r from-fintech-emerald to-emerald-600 hover:from-emerald-400 hover:to-fintech-emerald text-slate-950 font-extrabold rounded-xl transition-all shadow-glow-emerald shrink-0 flex items-center justify-center gap-2 text-sm tracking-wide">
+                        <span>Generar Plan</span> <i class="fas fa-arrow-right text-xs"></i>
+                    </button>
+                </div>
+
+                <!-- Sugerencias de Clic Rápido -->
+                <div id="suggestions" class="mt-5 w-full">
+                    <p class="text-[11px] text-slate-400 uppercase tracking-wider font-bold mb-2.5 text-center">Consultas de alto impacto recomendadas:</p>
+                    <div class="flex flex-wrap justify-center gap-2">
+                        <button onclick="fillPrompt('Deseo invertir 20000 a mediano plazo')" class="text-xs px-3.5 py-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-slate-700/80 text-slate-300 transition-all flex items-center gap-2 hover:border-emerald-500/50">
+                            <i class="fas fa-vault text-emerald-400 text-xs"></i> "Invertir $20,000 a mediano plazo"
+                        </button>
+                        <button onclick="fillPrompt('Deseo invertir 7000 en el sector tecnologico')" class="text-xs px-3.5 py-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-slate-700/80 text-slate-300 transition-all flex items-center gap-2 hover:border-indigo-500/50">
+                            <i class="fas fa-laptop-code text-indigo-400 text-xs"></i> "Invertir $7,000 en tecnología"
+                        </button>
+                        <button onclick="fillPrompt('Deseo invertir 3000 en Semiconductores')" class="text-xs px-3.5 py-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-slate-700/80 text-slate-300 transition-all flex items-center gap-2 hover:border-cyan-500/50">
+                            <i class="fas fa-microchip text-cyan-400 text-xs"></i> "Invertir $3,000 en Semiconductores"
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LOADING STATE -->
+            <div id="loading-state" class="hidden flex-col items-center justify-center py-16 w-full max-w-xl text-center">
+                <div class="relative w-20 h-20 mb-6">
+                    <div class="absolute inset-0 rounded-full border-4 border-slate-800"></div>
+                    <div class="absolute inset-0 rounded-full border-4 border-fintech-emerald border-t-transparent animate-spin"></div>
+                    <div class="absolute inset-0 flex items-center justify-center text-fintech-emerald text-xl">
+                        <i class="fas fa-brain animate-pulse"></i>
+                    </div>
+                </div>
+                <h3 class="text-xl font-bold text-white mb-2">Procesando Modelo Cuantitativo MASTER</h3>
+                <p class="text-xs text-fintech-textMuted mb-4">Corriendo 10,000 simulaciones Monte Carlo y estructurando órdenes de compra...</p>
+                <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden p-0.5 border border-slate-700">
+                    <div class="bg-gradient-to-r from-indigo-500 to-fintech-emerald h-full rounded-full w-3/4 animate-pulse"></div>
+                </div>
+            </div>
+
+            <!-- CONTENEDOR PRINCIPAL DE RESULTADOS (ACCIONES Y CONSEJERÍA) -->
+            <div id="results-container" class="w-full hidden space-y-8 animate-slide-up">
+                <!-- JS Injected View -->
+            </div>
+
+        </div>
+
+        <!-- ==================================================================== -->
+        <!-- VIEW 2: DEDICATED INVESTMENT GUIDE (GUÍA DE INVERSIÓN PAGINA)       -->
+        <!-- ==================================================================== -->
+        <div id="guide-view" class="w-full hidden space-y-10 animate-fade-in">
+            
+            <!-- Header Guía -->
+            <div class="glass-card p-6 sm:p-8 rounded-3xl border-l-4 border-l-indigo-500 relative overflow-hidden shadow-2xl">
+                <div class="max-w-4xl">
+                    <div class="flex items-center gap-2 mb-3">
+                        <span class="text-[11px] font-extrabold uppercase tracking-widest px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 inline-flex items-center gap-1.5">
+                            <i class="fas fa-book-open"></i> Academia y Recursos Financieros
+                        </span>
+                        <span class="text-[11px] font-semibold text-slate-400 hidden sm:inline">• Información directa sin modales</span>
+                    </div>
+                    <h1 class="text-3xl sm:text-4xl font-black text-white tracking-tight">
+                        Guía Completa de <span class="text-gradient-indigo">Inversión Cuantitativa</span>
+                    </h1>
+                    <p class="text-slate-300 text-sm mt-3 leading-relaxed max-w-3xl">
+                        Aprende sin jerga confusa. Aquí encontrarás la explicación detallada de todas las métricas empleadas por el modelo de IA de NexGen Quant, junto con enlaces directos a videos educativos de YouTube y herramientas de análisis financiero internacional.
+                    </p>
+                    
+                    <!-- Quick Jump Links -->
+                    <div class="flex flex-wrap items-center gap-2 mt-5 pt-4 border-t border-slate-800 text-xs">
+                        <span class="text-slate-400 font-bold mr-1">Ir rápidamente a:</span>
+                        <a href="#section-guide-metrics" class="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 transition-all font-semibold flex items-center gap-1.5">
+                            <i class="fas fa-calculator text-[10px]"></i> Métricas Financieras
+                        </a>
+                        <a href="#section-guide-assets" class="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 transition-all font-semibold flex items-center gap-1.5">
+                            <i class="fas fa-layer-group text-[10px]"></i> Tipos de Activos
+                        </a>
+                        <a href="#section-guide-youtube" class="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-red-600/30 text-red-300 border border-red-500/30 transition-all font-semibold flex items-center gap-1.5">
+                            <i class="fab fa-youtube text-[10px] text-red-400"></i> Videos de YouTube
+                        </a>
+                        <a href="#section-guide-tools" class="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-cyan-600/30 text-cyan-300 border border-cyan-500/30 transition-all font-semibold flex items-center gap-1.5">
+                            <i class="fas fa-globe text-[10px] text-cyan-400"></i> Herramientas Web
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Buscador Dinámico de Conceptos -->
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4 glass-panel p-4 rounded-2xl border border-slate-800">
+                <div class="w-full sm:w-96 glass-card rounded-xl px-4 py-2.5 flex items-center gap-3 border border-slate-700/80">
+                    <i class="fas fa-search text-indigo-400 text-sm"></i>
+                    <input type="text" id="guide-search-input" onkeyup="filterGuideTerms()" placeholder="Buscar término o video (ej. Dividendo, FCF, Sharpe, VOO)..." class="bg-transparent border-none outline-none text-white text-xs w-full placeholder-slate-500 font-medium">
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto" id="guide-category-filters">
+                    <button onclick="filterGuideCategory('all')" class="guide-cat-btn active px-3.5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold transition-all">Todos</button>
+                    <button onclick="filterGuideCategory('metricas')" class="guide-cat-btn px-3.5 py-2 rounded-xl bg-slate-900 text-slate-300 hover:bg-slate-800 border border-slate-800 text-xs font-semibold transition-all">Métricas</button>
+                    <button onclick="filterGuideCategory('activos')" class="guide-cat-btn px-3.5 py-2 rounded-xl bg-slate-900 text-slate-300 hover:bg-slate-800 border border-slate-800 text-xs font-semibold transition-all">Activos</button>
+                    <button onclick="filterGuideCategory('youtube')" class="guide-cat-btn px-3.5 py-2 rounded-xl bg-slate-900 text-slate-300 hover:bg-slate-800 border border-slate-800 text-xs font-semibold transition-all">YouTube</button>
+                    <button onclick="filterGuideCategory('herramientas')" class="guide-cat-btn px-3.5 py-2 rounded-xl bg-slate-900 text-slate-300 hover:bg-slate-800 border border-slate-800 text-xs font-semibold transition-all">Herramientas Web</button>
+                </div>
+            </div>
+
+            <!-- SECCIÓN 1: MÉTRICAS FINANCIERAS CLAVE (INFORMACIÓN COMPLETA DIRECTA) -->
+            <div id="section-guide-metrics" class="space-y-4">
+                <div class="flex items-center gap-2 border-b border-slate-800 pb-3">
+                    <div class="w-8 h-8 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-sm">
+                        <i class="fas fa-calculator"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-white">Métricas Financieras Fundamentales</h2>
+                        <p class="text-xs text-slate-400">Los indicadores clave que la IA evalúa antes de calificar una compra.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    
+                    <!-- Metric 1: Dividend Yield -->
+                    <div class="guide-card glass-card p-6 rounded-2xl border-l-4 border-l-emerald-500 flex flex-col justify-between" data-category="metricas" data-keywords="dividend yield dividendo rendimiento flujo directo efectivo schd">
+                        <div>
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="px-2.5 py-1 rounded bg-emerald-500/20 text-emerald-400 font-bold text-[10px] uppercase tracking-wider">Flujo de Caja Pasivo</span>
+                                <i class="fas fa-hand-holding-dollar text-emerald-400 text-lg"></i>
+                            </div>
+                            <h3 class="text-lg font-black text-white mb-2">Dividend Yield (Rendimiento por Dividendo)</h3>
+                            <p class="text-xs text-slate-300 leading-relaxed mb-4">
+                                Porcentaje anual del precio de la acción que la empresa te transfiere en dinero en efectivo directamente a tu cuenta de broker.
+                            </p>
+                            <div class="p-3 bg-slate-950/90 rounded-xl border border-slate-800/90 text-[11px] font-mono text-emerald-300 mb-4">
+                                Fórmula: (Dividendo Anual USD / Precio de Acción) × 100
+                            </div>
+                            <div class="space-y-2 text-xs text-slate-300 bg-slate-900/60 p-3 rounded-xl border border-slate-800/80 mb-4">
+                                <strong class="text-emerald-400 block font-semibold">¿Por qué lo usa la IA?</strong>
+                                <p class="text-[11px] leading-tight text-slate-300">Empresas con dividendos constantes y crecientes (ej. SCHD, Apple) proveen un piso de amortiguación durante caídas del mercado.</p>
+                            </div>
+                        </div>
+                        <div class="pt-3 border-t border-slate-800/80 text-[11px] text-slate-400">
+                            <strong class="text-white">Ejemplo Real:</strong> Si compras SCHD a $80 y paga $2.76 al año, su Dividend Yield es <strong>3.45%</strong>.
+                        </div>
+                    </div>
+
+                    <!-- Metric 2: FCF Yield -->
+                    <div class="guide-card glass-card p-6 rounded-2xl border-l-4 border-l-indigo-500 flex flex-col justify-between" data-category="metricas" data-keywords="fcf yield free cash flow flujo libre caja efectivo meta aapl">
+                        <div>
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="px-2.5 py-1 rounded bg-indigo-500/20 text-indigo-400 font-bold text-[10px] uppercase tracking-wider">Salud Financiera Real</span>
+                                <i class="fas fa-piggy-bank text-indigo-400 text-lg"></i>
+                            </div>
+                            <h3 class="text-lg font-black text-white mb-2">FCF Yield (Free Cash Flow Yield)</h3>
+                            <p class="text-xs text-slate-300 leading-relaxed mb-4">
+                                Mide el porcentaje de dinero sobrante en efectivo real que produce la compañía tras cubrir todos sus costos de operación e infraestructura.
+                            </p>
+                            <div class="p-3 bg-slate-950/90 rounded-xl border border-slate-800/90 text-[11px] font-mono text-indigo-300 mb-4">
+                                Fórmula: (Flujo de Caja Libre / Market Cap) × 100
+                            </div>
+                            <div class="space-y-2 text-xs text-slate-300 bg-slate-900/60 p-3 rounded-xl border border-slate-800/80 mb-4">
+                                <strong class="text-indigo-300 block font-semibold">Regla del Modelo Cuantitativo:</strong>
+                                <p class="text-[11px] leading-tight text-slate-300">Un FCF Yield &gt; 4% indica que la empresa es una "máquina de imprimir dinero" y no depende de deuda cara para sobrevivir.</p>
+                            </div>
+                        </div>
+                        <div class="pt-3 border-t border-slate-800/80 text-[11px] text-slate-400">
+                            <strong class="text-white">Ejemplo Real:</strong> Meta Platforms (META) ostenta un FCF Yield ~4.8%, permitiéndole invertir billones en IA.
+                        </div>
+                    </div>
+
+                    <!-- Metric 3: Ratio Sharpe -->
+                    <div class="guide-card glass-card p-6 rounded-2xl border-l-4 border-l-amber-500 flex flex-col justify-between" data-category="metricas" data-keywords="ratio sharpe riesgo retorno eficiencia monte carlo volatilidad">
+                        <div>
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="px-2.5 py-1 rounded bg-amber-500/20 text-amber-400 font-bold text-[10px] uppercase tracking-wider">Eficiencia de Riesgo</span>
+                                <i class="fas fa-scale-balanced text-amber-400 text-lg"></i>
+                            </div>
+                            <h3 class="text-lg font-black text-white mb-2">Ratio de Sharpe (Eficiencia)</h3>
+                            <p class="text-xs text-slate-300 leading-relaxed mb-4">
+                                Cuantifica la ganancia adicional que genera la estrategia por cada unidad de volatilidad o riesgo de pérdida asumido.
+                            </p>
+                            <div class="p-3 bg-slate-950/90 rounded-xl border border-slate-800/90 text-[11px] font-mono text-amber-300 mb-4">
+                                Sharpe &lt; 1.0: Pobre | Sharpe &gt; 1.5: Excelente
+                            </div>
+                            <div class="space-y-2 text-xs text-slate-300 bg-slate-900/60 p-3 rounded-xl border border-slate-800/80 mb-4">
+                                <strong class="text-amber-400 block font-semibold">Criterio de Evaluación:</strong>
+                                <p class="text-[11px] leading-tight text-slate-300">Un retorno del 30% no sirve si se logra arriesgando perder el 60% de tu dinero. El Sharpe asegura el equilibrio.</p>
+                            </div>
+                        </div>
+                        <div class="pt-3 border-t border-slate-800/80 text-[11px] text-slate-400">
+                            <strong class="text-white">Portafolio All-Weather:</strong> Mantiene un Ratio de Sharpe de <strong>1.85</strong> frente a 0.95 del S&P 500 concentrado.
+                        </div>
+                    </div>
+
+                    <!-- Metric 4: PER (P/E Ratio) -->
+                    <div class="guide-card glass-card p-6 rounded-2xl border-l-4 border-l-purple-500 flex flex-col justify-between" data-category="metricas" data-keywords="pe ratio per precio ganancias valuacion multiplicador nvda">
+                        <div>
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="px-2.5 py-1 rounded bg-purple-500/20 text-purple-400 font-bold text-[10px] uppercase tracking-wider">Valuación de Mercado</span>
+                                <i class="fas fa-chart-line text-purple-400 text-lg"></i>
+                            </div>
+                            <h3 class="text-lg font-black text-white mb-2">Ratio P/E o PER (Price-to-Earnings)</h3>
+                            <p class="text-xs text-slate-300 leading-relaxed mb-4">
+                                Indica cuántos dólares pagan los inversores por cada $1 dólar de beneficio neto generado por la empresa.
+                            </p>
+                            <div class="p-3 bg-slate-950/90 rounded-xl border border-slate-800/90 text-[11px] font-mono text-purple-300 mb-4">
+                                Fórmula: Precio por Acción / Ganancia por Acción (EPS)
+                            </div>
+                            <div class="space-y-2 text-xs text-slate-300 bg-slate-900/60 p-3 rounded-xl border border-slate-800/80 mb-4">
+                                <strong class="text-purple-300 block font-semibold">Interpretación:</strong>
+                                <p class="text-[11px] leading-tight text-slate-300">Un PER de 25x significa que se pagan 25 años de ganancias actuales. En tecnológicas con alto crecimiento, PERs más altos están justificados.</p>
+                            </div>
+                        </div>
+                        <div class="pt-3 border-t border-slate-800/80 text-[11px] text-slate-400">
+                            <strong class="text-white">Comparativa:</strong> Promedio histórico S&P 500 = 18x | Sector Tech = 28x-35x.
+                        </div>
+                    </div>
+
+                    <!-- Metric 5: Beta & Volatilidad -->
+                    <div class="guide-card glass-card p-6 rounded-2xl border-l-4 border-l-cyan-500 flex flex-col justify-between" data-category="metricas" data-keywords="beta volatilidad riesgo oscilacion smh tech">
+                        <div>
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="px-2.5 py-1 rounded bg-cyan-500/20 text-cyan-400 font-bold text-[10px] uppercase tracking-wider">Sensibilidad</span>
+                                <i class="fas fa-wave-square text-cyan-400 text-lg"></i>
+                            </div>
+                            <h3 class="text-lg font-black text-white mb-2">Beta (Sensibilidad de Mercado)</h3>
+                            <p class="text-xs text-slate-300 leading-relaxed mb-4">
+                                Mide cuánto reacciona el precio de un activo frente a las oscilaciones del índice general (S&P 500 con Beta = 1.0).
+                            </p>
+                            <div class="p-3 bg-slate-950/90 rounded-xl border border-slate-800/90 text-[11px] font-mono text-cyan-300 mb-4">
+                                Beta &gt; 1.0: Más volátil | Beta &lt; 1.0: Más estable
+                            </div>
+                            <div class="space-y-2 text-xs text-slate-300 bg-slate-900/60 p-3 rounded-xl border border-slate-800/80 mb-4">
+                                <strong class="text-cyan-300 block font-semibold">Aplicación Práctica:</strong>
+                                <p class="text-[11px] leading-tight text-slate-300">Si el ETF de semiconductores (SMH) tiene Beta 1.4, cuando el S&P 500 sube 10%, SMH tiende a subir 14% (y viceversa).</p>
+                            </div>
+                        </div>
+                        <div class="pt-3 border-t border-slate-800/80 text-[11px] text-slate-400">
+                            <strong class="text-white">Protección:</strong> Asignar renta fija o billetes T-Bill (Beta ~0.0) neutraliza las caídas.
+                        </div>
+                    </div>
+
+                    <!-- Metric 6: Max Drawdown -->
+                    <div class="guide-card glass-card p-6 rounded-2xl border-l-4 border-l-rose-500 flex flex-col justify-between" data-category="metricas" data-keywords="max drawdown caida maxima freno stop loss proteccion">
+                        <div>
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="px-2.5 py-1 rounded bg-rose-500/20 text-rose-400 font-bold text-[10px] uppercase tracking-wider">Control de Pérdida</span>
+                                <i class="fas fa-arrow-trend-down text-rose-400 text-lg"></i>
+                            </div>
+                            <h3 class="text-lg font-black text-white mb-2">Máximo Desplome (Max Drawdown)</h3>
+                            <p class="text-xs text-slate-300 leading-relaxed mb-4">
+                                La mayor pérdida porcentual registrada desde el pico más alto del portafolio hasta su punto más bajo en un período determinado.
+                            </p>
+                            <div class="p-3 bg-slate-950/90 rounded-xl border border-slate-800/90 text-[11px] font-mono text-rose-300 mb-4">
+                                Objetivo IA: Limitar Drawdown a &lt; -12%
+                            </div>
+                            <div class="space-y-2 text-xs text-slate-300 bg-slate-900/60 p-3 rounded-xl border border-slate-800/80 mb-4">
+                                <strong class="text-rose-400 block font-semibold">Por qué es Vital:</strong>
+                                <p class="text-[11px] leading-tight text-slate-300">Una caída del 50% requiere un alza del 100% para volver al punto de partida. Evitar grandes desplomes preserva la magia del interés compuesto.</p>
+                            </div>
+                        </div>
+                        <div class="pt-3 border-t border-slate-800/80 text-[11px] text-slate-400">
+                            <strong class="text-white">Regla de Oro:</strong> Usar Stop-Loss preventivo en un -10% sobre posiciones de alta beta.
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- SECCIÓN 2: TIPOS DE ACTIVOS Y VEHÍCULOS DE INVERSIÓN -->
+            <div id="section-guide-assets" class="space-y-4 pt-4">
+                <div class="flex items-center gap-2 border-b border-slate-800 pb-3">
+                    <div class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-sm">
+                        <i class="fas fa-layer-group"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-white">Vehículos de Inversión Sugeridos</h2>
+                        <p class="text-xs text-slate-400">Instrumentos financieros recomendados en los planes de compra de NexGen Quant.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    
+                    <!-- Asset 1: ETFs -->
+                    <div class="guide-card glass-card p-6 rounded-2xl border-l-4 border-l-blue-500 flex flex-col justify-between" data-category="activos" data-keywords="etf fondos cotizados voo schd botz smh diversificacion">
+                        <div>
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="px-2.5 py-1 rounded bg-blue-500/20 text-blue-400 font-bold text-[10px] uppercase tracking-wider">Cesta de Activos</span>
+                                <i class="fas fa-boxes-stacked text-blue-400 text-lg"></i>
+                            </div>
+                            <h3 class="text-lg font-black text-white mb-2">ETFs (Exchange Traded Funds)</h3>
+                            <p class="text-xs text-slate-300 leading-relaxed mb-4">
+                                Fondos cotizados en bolsa que agrupan decenas o cientos de acciones en una sola orden de compra.
+                            </p>
+                            <ul class="text-xs text-slate-300 space-y-1.5 list-disc pl-4 mb-4">
+                                <li><strong>VOO:</strong> Las 500 mayores empresas de EE.UU.</li>
+                                <li><strong>SCHD:</strong> Cesta de empresas con dividendos crecientes.</li>
+                                <li><strong>SMH:</strong> 25 gigantes globales de semiconductores.</li>
+                            </ul>
+                        </div>
+                        <div class="pt-3 border-t border-slate-800/80 text-[11px] text-slate-400">
+                            <strong class="text-white">Ventaja:</strong> Otorga diversificación instantánea reduciendo el riesgo de quiebra individual a casi cero.
+                        </div>
+                    </div>
+
+                    <!-- Asset 2: Acciones Directas -->
+                    <div class="guide-card glass-card p-6 rounded-2xl border-l-4 border-l-emerald-500 flex flex-col justify-between" data-category="activos" data-keywords="acciones directas aapl meta nvda fcx crecimiento cash cow">
+                        <div>
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="px-2.5 py-1 rounded bg-emerald-500/20 text-emerald-400 font-bold text-[10px] uppercase tracking-wider">Títulos de Propiedad</span>
+                                <i class="fas fa-building text-emerald-400 text-lg"></i>
+                            </div>
+                            <h3 class="text-lg font-black text-white mb-2">Acciones Directas (Equities)</h3>
+                            <p class="text-xs text-slate-300 leading-relaxed mb-4">
+                                Títulos que te convierten en dueño fraccionario de empresas individuales con derecho a dividendos y apreciación de capital.
+                            </p>
+                            <ul class="text-xs text-slate-300 space-y-1.5 list-disc pl-4 mb-4">
+                                <li><strong>Cash Cows (Apple/Meta):</strong> Empresas con monopolio y flujo libre de caja positivo.</li>
+                                <li><strong>Puras IA (NVIDIA):</strong> Motores de rendimiento acelerado.</li>
+                            </ul>
+                        </div>
+                        <div class="pt-3 border-t border-slate-800/80 text-[11px] text-slate-400">
+                            <strong class="text-white">Estrategia:</strong> Representan entre el 30% y 40% del presupuesto para capturar alpha (sobreganancia).
+                        </div>
+                    </div>
+
+                    <!-- Asset 3: Commodities & Cash -->
+                    <div class="guide-card glass-card p-6 rounded-2xl border-l-4 border-l-amber-500 flex flex-col justify-between" data-category="activos" data-keywords="oro materias primas gld bil t-bills refugio cobertura inflacion">
+                        <div>
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="px-2.5 py-1 rounded bg-amber-500/20 text-amber-400 font-bold text-[10px] uppercase tracking-wider">Protección Anti-Crisis</span>
+                                <i class="fas fa-coins text-amber-400 text-lg"></i>
+                            </div>
+                            <h3 class="text-lg font-black text-white mb-2">Commodities, Oro y T-Bills</h3>
+                            <p class="text-xs text-slate-300 leading-relaxed mb-4">
+                                Activos descorrelacionados del mercado accionario diseñados para resistir shocks geopolíticos e hiperinflación.
+                            </p>
+                            <ul class="text-xs text-slate-300 space-y-1.5 list-disc pl-4 mb-4">
+                                <li><strong>GLD (Oro Físico):</strong> Reserva de valor histórica sin riesgo crediticio.</li>
+                                <li><strong>BIL (T-Bills):</strong> Deuda del Tesoro EE.UU. a corto plazo acumulando ~5.15% de interés.</li>
+                            </ul>
+                        </div>
+                        <div class="pt-3 border-t border-slate-800/80 text-[11px] text-slate-400">
+                            <strong class="text-white">Rol Cuantitativo:</strong> Se activan cuando la volatilidad azota la tecnología.
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- SECCIÓN 3: BIBLIOTECA DE VIDEOS RECOMENDADOS EN YOUTUBE -->
+            <div id="section-guide-youtube" class="space-y-4 pt-4">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-xl bg-red-500/20 text-red-400 flex items-center justify-center font-bold text-sm">
+                            <i class="fab fa-youtube"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-xl font-bold text-white">Biblioteca de Aprendizaje en YouTube</h2>
+                            <p class="text-xs text-slate-400">Cursos completos y explicaciones en video recomendadas para profundizar.</p>
+                        </div>
+                    </div>
+                    <span class="text-[11px] px-2.5 py-1 rounded-md bg-red-500/10 text-red-400 border border-red-500/20 font-bold hidden sm:inline">
+                        <i class="fas fa-play mr-1"></i> Acceso Directo Gratuito
+                    </span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    
+                    <!-- Video Card 1 -->
+                    <div class="guide-card glass-card p-5 rounded-2xl border-l-4 border-l-red-500 flex flex-col justify-between hover:bg-slate-900/80 transition-all shadow-xl" data-category="youtube" data-keywords="youtube video curso completo invertir bolsa desde cero andres garza principiantes">
+                        <div>
+                            <div class="flex justify-between items-start mb-3">
+                                <span class="px-2.5 py-1 rounded bg-red-500/20 text-red-400 font-extrabold text-[10px] uppercase tracking-wider flex items-center gap-1">
+                                    <i class="fab fa-youtube"></i> Curso Completo
+                                </span>
+                                <span class="text-[10px] font-mono font-bold text-slate-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">45 Minutos</span>
+                            </div>
+
+                            <h3 class="text-base font-extrabold text-white mb-2 leading-snug">
+                                Curso Completo de Inversiones: Cómo Invertir en la Bolsa Desde Cero
+                            </h3>
+                            <p class="text-xs text-slate-300 leading-relaxed mb-4">
+                                Guía estructurada paso a paso para entender la apertura de cuenta en brokers regulados, compra de acciones fraccionadas y selección de ETFs.
+                            </p>
+
+                            <div class="p-3 bg-slate-950/80 rounded-xl border border-slate-800 text-[11px] text-slate-300 space-y-1 mb-4">
+                                <div class="font-bold text-slate-200">Canal: Andrés Garza</div>
+                                <div class="text-[10px] text-slate-400">Temas: Apertura de Broker, Ordenes Límite/Market, Psicología Inversora.</div>
+                            </div>
+                        </div>
+
+                        <a href="https://www.youtube.com/watch?v=vt5WfGC_6gE" target="_blank" rel="noopener" class="w-full py-2.5 px-4 bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition-all shadow-md">
+                            <i class="fab fa-youtube text-base"></i> Ver Video en YouTube <i class="fas fa-external-link-alt text-[10px]"></i>
+                        </a>
+                    </div>
+
+                    <!-- Video Card 2 -->
+                    <div class="guide-card glass-card p-5 rounded-2xl border-l-4 border-l-red-500 flex flex-col justify-between hover:bg-slate-900/80 transition-all shadow-xl" data-category="youtube" data-keywords="youtube video etf voo schd principiantes winston cordero 3 etfs">
+                        <div>
+                            <div class="flex justify-between items-start mb-3">
+                                <span class="px-2.5 py-1 rounded bg-red-500/20 text-red-400 font-extrabold text-[10px] uppercase tracking-wider flex items-center gap-1">
+                                    <i class="fab fa-youtube"></i> Selección de ETFs
+                                </span>
+                                <span class="text-[10px] font-mono font-bold text-slate-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">17 Minutos</span>
+                            </div>
+
+                            <h3 class="text-base font-extrabold text-white mb-2 leading-snug">
+                                Los Únicos 3 ETFs que Necesitas para Hacer Dinero (Como Principiante)
+                            </h3>
+                            <p class="text-xs text-slate-300 leading-relaxed mb-4">
+                                Análisis práctico de los ETFs más eficientes del mercado global (S&P 500, Dividendos Crecientes y Tecnología) para construir riqueza pasiva.
+                            </p>
+
+                            <div class="p-3 bg-slate-950/80 rounded-xl border border-slate-800 text-[11px] text-slate-300 space-y-1 mb-4">
+                                <div class="font-bold text-slate-200">Canal: Winston Cordero</div>
+                                <div class="text-[10px] text-slate-400">Temas: Indexación pasiva, SCHD vs VOO, comisiones TER.</div>
+                            </div>
+                        </div>
+
+                        <a href="https://www.youtube.com/watch?v=EBaVujg_Okw" target="_blank" rel="noopener" class="w-full py-2.5 px-4 bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition-all shadow-md">
+                            <i class="fab fa-youtube text-base"></i> Ver Video en YouTube <i class="fas fa-external-link-alt text-[10px]"></i>
+                        </a>
+                    </div>
+
+                    <!-- Video Card 3 -->
+                    <div class="guide-card glass-card p-5 rounded-2xl border-l-4 border-l-red-500 flex flex-col justify-between hover:bg-slate-900/80 transition-all shadow-xl" data-category="youtube" data-keywords="youtube video dividendos schd voo coke dividendos rendimiento">
+                        <div>
+                            <div class="flex justify-between items-start mb-3">
+                                <span class="px-2.5 py-1 rounded bg-red-500/20 text-red-400 font-extrabold text-[10px] uppercase tracking-wider flex items-center gap-1">
+                                    <i class="fab fa-youtube"></i> Estrategia Dividendos
+                                </span>
+                                <span class="text-[10px] font-mono font-bold text-slate-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">11 Minutos</span>
+                            </div>
+
+                            <h3 class="text-base font-extrabold text-white mb-2 leading-snug">
+                                SCHD vs VOO: Dividendos Crecientes vs Crecimiento S&P 500
+                            </h3>
+                            <p class="text-xs text-slate-300 leading-relaxed mb-4">
+                                Comparativa directa con números reales simulando un portafolio de $50,000 USD invertidos en rendimiento por dividendo versus revalorización pura.
+                            </p>
+
+                            <div class="p-3 bg-slate-950/80 rounded-xl border border-slate-800 text-[11px] text-slate-300 space-y-1 mb-4">
+                                <div class="font-bold text-slate-200">Canal: Coke Dividendos</div>
+                                <div class="text-[10px] text-slate-400">Temas: Flujo de caja, interés compuesto, rebalanceo.</div>
+                            </div>
+                        </div>
+
+                        <a href="https://www.youtube.com/watch?v=By6SToD1gHE" target="_blank" rel="noopener" class="w-full py-2.5 px-4 bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition-all shadow-md">
+                            <i class="fab fa-youtube text-base"></i> Ver Video en YouTube <i class="fas fa-external-link-alt text-[10px]"></i>
+                        </a>
+                    </div>
+
+                    <!-- Video Card 4 -->
+                    <div class="guide-card glass-card p-5 rounded-2xl border-l-4 border-l-red-500 flex flex-col justify-between hover:bg-slate-900/80 transition-all shadow-xl" data-category="youtube" data-keywords="youtube video cesar dabian finanzas basico fundamentos">
+                        <div>
+                            <div class="flex justify-between items-start mb-3">
+                                <span class="px-2.5 py-1 rounded bg-red-500/20 text-red-400 font-extrabold text-[10px] uppercase tracking-wider flex items-center gap-1">
+                                    <i class="fab fa-youtube"></i> Fundamentos Financieros
+                                </span>
+                                <span class="text-[10px] font-mono font-bold text-slate-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">26 Minutos</span>
+                            </div>
+
+                            <h3 class="text-base font-extrabold text-white mb-2 leading-snug">
+                                Aprende a Invertir Desde Cero: Nivel Básico e Intermedio
+                            </h3>
+                            <p class="text-xs text-slate-300 leading-relaxed mb-4">
+                                Conceptos esenciales sobre tasas de interés, inflación, diversificación por sectores y cómo evitar estafas financieras comunes.
+                            </p>
+
+                            <div class="p-3 bg-slate-950/80 rounded-xl border border-slate-800 text-[11px] text-slate-300 space-y-1 mb-4">
+                                <div class="font-bold text-slate-200">Canal: César Dabián Finanzas</div>
+                                <div class="text-[10px] text-slate-400">Temas: Gestión de riesgo, perfil conservador/agresivo.</div>
+                            </div>
+                        </div>
+
+                        <a href="https://www.youtube.com/watch?v=2ibqfxEAESo" target="_blank" rel="noopener" class="w-full py-2.5 px-4 bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition-all shadow-md">
+                            <i class="fab fa-youtube text-base"></i> Ver Video en YouTube <i class="fas fa-external-link-alt text-[10px]"></i>
+                        </a>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- SECCIÓN 4: HERRAMIENTAS Y SITIOS WEB FINANCIEROS RECOMENDADOS -->
+            <div id="section-guide-tools" class="space-y-4 pt-4">
+                <div class="flex items-center gap-2 border-b border-slate-800 pb-3">
+                    <div class="w-8 h-8 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold text-sm">
+                        <i class="fas fa-globe"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-white">Herramientas Web y Plataformas Institucionales</h2>
+                        <p class="text-xs text-slate-400">Sitios externos recomendados para auditar datos, simulaciones y reportes oficiales.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+
+                    <!-- Tool 1: Portfolio Visualizer -->
+                    <div class="guide-card glass-card p-5 rounded-2xl border border-slate-800 hover:border-cyan-500/50 flex flex-col justify-between transition-all" data-category="herramientas" data-keywords="herramientas web portfolio visualizer monte carlo backtesting simuacion">
+                        <div>
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 text-[10px] font-bold">Simulación & Backtest</span>
+                                <i class="fas fa-chart-pie text-cyan-400"></i>
+                            </div>
+                            <h3 class="text-base font-bold text-white mb-1">Portfolio Visualizer</h3>
+                            <p class="text-xs text-slate-300 leading-relaxed mb-4">
+                                Herramienta online gratuita para realizar simulaciones Monte Carlo, comprobar rendimientos históricos y analizar la correlación entre activos desde 1985.
+                            </p>
+                        </div>
+                        <a href="https://www.portfoliovisualizer.com" target="_blank" rel="noopener" class="w-full py-2 px-3 bg-slate-900 hover:bg-slate-800 text-cyan-400 border border-slate-700 hover:border-cyan-500/50 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all">
+                            <span>Visitar Website</span> <i class="fas fa-arrow-up-right-from-square text-[10px]"></i>
+                        </a>
+                    </div>
+
+                    <!-- Tool 2: Seeking Alpha -->
+                    <div class="guide-card glass-card p-5 rounded-2xl border border-slate-800 hover:border-cyan-500/50 flex flex-col justify-between transition-all" data-category="herramientas" data-keywords="herramientas web seeking alpha metricas dividendos fcf reportes">
+                        <div>
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 text-[10px] font-bold">Análisis Fundamental</span>
+                                <i class="fas fa-magnifying-glass-chart text-cyan-400"></i>
+                            </div>
+                            <h3 class="text-base font-bold text-white mb-1">Seeking Alpha</h3>
+                            <p class="text-xs text-slate-300 leading-relaxed mb-4">
+                                Plataforma de consulta de métricas detalladas de Free Cash Flow, historial de pago de dividendos y transcripciones de llamadas de resultados de empresas globales.
+                            </p>
+                        </div>
+                        <a href="https://seekingalpha.com" target="_blank" rel="noopener" class="w-full py-2 px-3 bg-slate-900 hover:bg-slate-800 text-cyan-400 border border-slate-700 hover:border-cyan-500/50 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all">
+                            <span>Visitar Website</span> <i class="fas fa-arrow-up-right-from-square text-[10px]"></i>
+                        </a>
+                    </div>
+
+                    <!-- Tool 3: SEC EDGAR -->
+                    <div class="guide-card glass-card p-5 rounded-2xl border border-slate-800 hover:border-cyan-500/50 flex flex-col justify-between transition-all" data-category="herramientas" data-keywords="herramientas web sec edgar reportes oficiales 10k 10q estados financieros">
+                        <div>
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 text-[10px] font-bold">Oficial EE.UU.</span>
+                                <i class="fas fa-landmark text-cyan-400"></i>
+                            </div>
+                            <h3 class="text-base font-bold text-white mb-1">SEC EDGAR System</h3>
+                            <p class="text-xs text-slate-300 leading-relaxed mb-4">
+                                Registro oficial del gobierno de EE.UU. donde cada empresa cotizada presenta sus reportes auditos 10-K (Anual) y 10-Q (Trimestral) sin intermediarios.
+                            </p>
+                        </div>
+                        <a href="https://www.sec.gov/edgar" target="_blank" rel="noopener" class="w-full py-2 px-3 bg-slate-900 hover:bg-slate-800 text-cyan-400 border border-slate-700 hover:border-cyan-500/50 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all">
+                            <span>Visitar Website</span> <i class="fas fa-arrow-up-right-from-square text-[10px]"></i>
+                        </a>
+                    </div>
+
+                    <!-- Tool 4: Investopedia -->
+                    <div class="guide-card glass-card p-5 rounded-2xl border border-slate-800 hover:border-cyan-500/50 flex flex-col justify-between transition-all" data-category="herramientas" data-keywords="herramientas web investopedia enciclopedia conceptos diccionario">
+                        <div>
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 text-[10px] font-bold">Enciclopedia Financiera</span>
+                                <i class="fas fa-graduation-cap text-cyan-400"></i>
+                            </div>
+                            <h3 class="text-base font-bold text-white mb-1">Investopedia</h3>
+                            <p class="text-xs text-slate-300 leading-relaxed mb-4">
+                                La mayor biblioteca educativa del mundo sobre terminología, fórmulas de finanzas corporativas, gestión de patrimonio y derivados.
+                            </p>
+                        </div>
+                        <a href="https://www.investopedia.com" target="_blank" rel="noopener" class="w-full py-2 px-3 bg-slate-900 hover:bg-slate-800 text-cyan-400 border border-slate-700 hover:border-cyan-500/50 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all">
+                            <span>Visitar Website</span> <i class="fas fa-arrow-up-right-from-square text-[10px]"></i>
+                        </a>
+                    </div>
+
+                    <!-- Tool 5: Yahoo Finance / TradingView -->
+                    <div class="guide-card glass-card p-5 rounded-2xl border border-slate-800 hover:border-cyan-500/50 flex flex-col justify-between transition-all" data-category="herramientas" data-keywords="herramientas web yahoo finance tradingview cotizaciones graficos tiempo real">
+                        <div>
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 text-[10px] font-bold">Mercado en Tiempo Real</span>
+                                <i class="fas fa-chart-line text-cyan-400"></i>
+                            </div>
+                            <h3 class="text-base font-bold text-white mb-1">Yahoo Finance & TradingView</h3>
+                            <p class="text-xs text-slate-300 leading-relaxed mb-4">
+                                Herramientas esenciales para el seguimiento diario de cotizaciones de acciones, precios de commodities y noticias macroeconómicas de última hora.
+                            </p>
+                        </div>
+                        <a href="https://finance.yahoo.com" target="_blank" rel="noopener" class="w-full py-2 px-3 bg-slate-900 hover:bg-slate-800 text-cyan-400 border border-slate-700 hover:border-cyan-500/50 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all">
+                            <span>Visitar Website</span> <i class="fas fa-arrow-up-right-from-square text-[10px]"></i>
+                        </a>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- MODAL DE USUARIO Y CONFIGURACIÓN -->
+    <div id="user-modal-overlay" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[80] hidden transition-opacity duration-300 opacity-0 flex items-center justify-center p-4" onclick="closeUserModal()">
+        <div class="bg-slate-950 border border-slate-800 rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]" onclick="event.stopPropagation()">
+            
+            <!-- User Modal Header -->
+            <div class="p-6 bg-slate-900 border-b border-slate-800 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-500 to-purple-600 text-white font-extrabold flex items-center justify-center text-lg shadow-lg">
+                        AW
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                            <span id="modal-user-display-name">Alex Wright</span>
+                            <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold">Verificado</span>
+                        </h2>
+                        <p class="text-xs text-slate-400 font-mono" id="modal-user-display-email">alex.wright@quant.io</p>
+                    </div>
+                </div>
+                <button onclick="closeUserModal()" class="w-8 h-8 rounded-xl bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <!-- User Modal Navigation Tabs -->
+            <div class="flex border-b border-slate-800 bg-slate-900/50 text-xs font-bold">
+                <button onclick="switchUserTab('tracked')" id="user-tab-tracked-btn" class="flex-1 py-3 px-4 border-b-2 border-emerald-500 text-emerald-400 transition-all flex items-center justify-center gap-2">
+                    <i class="fas fa-vault"></i> Mis Inversiones Guardadas (<span id="user-tracked-count">2</span>)
+                </button>
+                <button onclick="switchUserTab('settings')" id="user-tab-settings-btn" class="flex-1 py-3 px-4 border-b-2 border-transparent text-slate-400 hover:text-white transition-all flex items-center justify-center gap-2">
+                    <i class="fas fa-sliders"></i> Ajustes de Perfil
+                </button>
+            </div>
+
+            <!-- Modal Tab 1: Investments Tracked -->
+            <div id="user-tab-tracked" class="p-6 overflow-y-auto custom-scrollbar space-y-4">
+                <div class="flex items-center justify-between text-xs text-slate-400 bg-slate-900 p-3 rounded-xl border border-slate-800">
+                    <span>Capital Seguimiento Activo:</span>
+                    <span class="font-mono font-bold text-emerald-400 text-sm" id="user-total-tracked-amount">$11,000 USD</span>
+                </div>
+
+                <div class="space-y-3" id="user-tracked-list">
+                    <!-- JS Injected List of saved investments -->
+                </div>
+            </div>
+
+            <!-- Modal Tab 2: Profile Settings -->
+            <div id="user-tab-settings" class="p-6 overflow-y-auto custom-scrollbar space-y-5 hidden">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Nombre Completo</label>
+                        <input type="text" id="input-profile-name" value="Alex Wright" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none focus:border-indigo-500 transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Correo Electrónico</label>
+                        <input type="email" id="input-profile-email" value="alex.wright@quant.io" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none focus:border-indigo-500 transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Perfil de Riesgo Inversionista</label>
+                        <select id="input-profile-risk" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none focus:border-indigo-500 transition-all">
+                            <option value="Moderado">Moderado - Crecimiento Balanceado (Recomendado)</option>
+                            <option value="Conservador">Conservador - Preservación de Capital</option>
+                            <option value="Agresivo">Agresivo - Asimetría Tecnológica / IA</option>
+                        </select>
+                    </div>
+                    <div class="pt-2 border-t border-slate-800 flex justify-between items-center text-xs">
+                        <span class="text-slate-300 font-semibold">Notificaciones de Cambios de Métricas</span>
+                        <input type="checkbox" checked class="w-4 h-4 accent-emerald-500 rounded cursor-pointer">
+                    </div>
+                </div>
+
+                <div class="pt-4 flex justify-end">
+                    <button onclick="saveUserProfile()" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs transition-all shadow-md">
+                        Guardar Cambios
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- OVERLAY MÁSCARA -->
+    <div id="drawer-overlay" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[60] hidden transition-opacity duration-300 opacity-0" onclick="closeDrawers()"></div>
+
+    <!-- DRAWER / MODAL: ¿POR QUÉ CONFIAR EN ESTE MOVIMIENTO? -->
+    <aside id="trust-drawer" class="fixed top-0 right-0 h-full w-full max-w-xl bg-slate-950 border-l border-slate-800 z-[70] transform translate-x-full transition-transform duration-300 flex flex-col shadow-2xl">
+        <div class="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-900">
+            <div>
+                <span class="text-[10px] font-extrabold uppercase tracking-widest text-indigo-400">Auditoría Algorítmica</span>
+                <h2 class="text-xl font-black text-white flex items-center gap-2">
+                    <i class="fas fa-shield-halved text-fintech-emerald"></i> ¿Por qué confiar en esta orden?
+                </h2>
+            </div>
+            <button onclick="closeDrawers()" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-6" id="trust-content">
+            <!-- JS Inject -->
+        </div>
+    </aside>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div id="toast-container" class="fixed bottom-6 right-6 z-[90] space-y-2 pointer-events-none"></div>
+
+    <script>
+        let activeCharts = [];
+        let currentPortfolioState = {
+            totalAmount: 20000,
+            formattedAmount: '$20,000',
+            activeSector: null
+        };
+
+        // Tracked Assets System State
+        let trackedInvestments = [
+            { id: 'tech-allweather', name: 'Sector Tecnología e IA', ticker: 'TECH-SECTOR', amount: 7000, status: 'Invertido', date: '2026-08-10', change: '+3.4%' },
+            { id: 'sp500-allweather', name: 'S&P 500 Indexado', ticker: 'VOO', amount: 4000, status: 'Guardado', date: '2026-08-12', change: '+1.1%' }
+        ];
+
+        // Notifications List State
+        let notificationsList = [
+            { id: 1, ticker: 'META', title: 'Aumento de FCF Yield', desc: 'Meta Platforms reportó incremento de Flujo Libre a 4.9%.', time: 'Hace 2 horas', read: false },
+            { id: 2, ticker: 'AAPL', title: 'Confirmación de Dividendo', desc: 'Apple confirmó pago trimestral de $0.25/acción.', time: 'Hace 5 horas', read: false },
+            { id: 3, ticker: 'BIL', title: 'Interés acumulado', desc: 'Rendimiento T-Bill acreditado en tasa anual de 5.15%.', time: 'Ayer', read: false }
+        ];
+
+        function switchView(viewName) {
+            const advisorView = document.getElementById('advisor-view');
+            const guideView = document.getElementById('guide-view');
+            const navAdvisorBtn = document.getElementById('nav-advisor-btn');
+            const navGuideBtn = document.getElementById('nav-guide-btn');
+
+            if (viewName === 'guide') {
+                advisorView.classList.add('hidden');
+                guideView.classList.remove('hidden');
+                
+                navGuideBtn.className = "flex items-center gap-2 px-3 py-2 rounded-xl bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 transition-all text-xs font-bold shadow-sm";
+                navAdvisorBtn.className = "flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-300 border border-slate-700/80 transition-all text-xs font-semibold shadow-sm";
+            } else {
+                guideView.classList.add('hidden');
+                advisorView.classList.remove('hidden');
+
+                navAdvisorBtn.className = "flex items-center gap-2 px-3 py-2 rounded-xl bg-fintech-emerald/20 text-emerald-400 border border-fintech-emerald/40 transition-all text-xs font-bold shadow-sm";
+                navGuideBtn.className = "flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-300 border border-slate-700/80 transition-all text-xs font-semibold shadow-sm";
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function clearCharts() {
+            activeCharts.forEach(chart => {
+                if (chart && typeof chart.destroy === 'function') {
+                    chart.destroy();
+                }
+            });
+            activeCharts = [];
+        }
+
+        function fillPrompt(text) {
+            document.getElementById('prompt-input').value = text;
+            processPrompt();
+        }
+
+        function resetToHome() {
+            clearCharts();
+            currentPortfolioState.activeSector = null;
+            document.getElementById('prompt-input').value = '';
+            document.getElementById('suggestions').classList.remove('hidden');
+            document.getElementById('results-container').classList.add('hidden');
+            document.getElementById('results-container').innerHTML = '';
+            document.getElementById('main-title-container').classList.remove('hidden');
+            document.getElementById('main-title').innerHTML = '¿Qué movimiento deseas <span class="text-gradient-emerald">ejecutar hoy?</span>';
+            document.getElementById('search-container').classList.remove('mb-2');
+            document.getElementById('search-container').classList.add('mb-8');
+            switchView('advisor');
+        }
+
+        function processPrompt() {
+            switchView('advisor');
+            const rawInput = document.getElementById('prompt-input').value.trim();
+            if (!rawInput) return;
+
+            const prompt = rawInput.toLowerCase();
+            clearCharts();
+
+            // Extract Numeric Budget
+            const amountMatch = prompt.match(/\d+[\d,]*/);
+            let amount = 20000;
+            if (amountMatch) {
+                amount = parseInt(amountMatch[0].replace(/,/g, ''));
+                if (isNaN(amount) || amount <= 0) amount = 20000;
+            }
+
+            currentPortfolioState.totalAmount = amount;
+            currentPortfolioState.formattedAmount = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(amount);
+            currentPortfolioState.activeSector = null;
+
+            // UI Transitions
+            document.getElementById('suggestions').classList.add('hidden');
+            document.getElementById('results-container').classList.add('hidden');
+            document.getElementById('search-container').classList.remove('mb-8');
+            document.getElementById('search-container').classList.add('mb-4');
+            
+            const loading = document.getElementById('loading-state');
+            loading.classList.remove('hidden');
+            loading.classList.add('flex');
+
+            setTimeout(() => {
+                loading.classList.add('hidden');
+                loading.classList.remove('flex');
+                document.getElementById('results-container').classList.remove('hidden');
+
+                if (prompt.includes('tecnologico') || prompt.includes('tech') || prompt.includes('tecnología')) {
+                    renderSectorView(currentPortfolioState.formattedAmount, currentPortfolioState.totalAmount);
+                } else if (prompt.includes('semiconductores') || prompt.includes('nvidia') || prompt.includes('chips') || prompt.includes('microchip')) {
+                    renderNicheView(currentPortfolioState.formattedAmount, currentPortfolioState.totalAmount);
+                } else {
+                    renderAllWeatherView(currentPortfolioState.formattedAmount, currentPortfolioState.totalAmount);
+                }
+                
+                window.scrollTo({ top: 180, behavior: 'smooth' });
+            }, 900);
+        }
+
+        function renderAllWeatherView(amountStr, amountNum) {
+            currentPortfolioState.activeSector = null;
+            const container = document.getElementById('results-container');
+            
+            const sp500 = Math.round(amountNum * 0.35);
+            const tech = Math.round(amountNum * 0.35);
+            const goldComm = Math.round(amountNum * 0.20);
+            const cash = Math.round(amountNum * 0.10);
+
+            const format = (v) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(v);
+
+            container.innerHTML = `
+                <!-- BREADCRUMB HEADER MACRO -->
+                <div class="flex items-center justify-between bg-slate-900/60 p-3.5 rounded-2xl border border-slate-800 text-xs">
+                    <div class="flex items-center gap-2 text-slate-300">
+                        <span class="text-emerald-400 font-bold"><i class="fas fa-layer-group"></i> Nivel Macro:</span>
+                        <span>Portafolio General Conservador</span>
+                        <span class="text-slate-600">•</span>
+                        <span class="font-mono text-white font-bold">${amountStr}</span>
+                    </div>
+                    <span class="text-[11px] text-slate-400 font-medium hidden sm:inline"><i class="fas fa-hand-pointer text-emerald-400 mr-1"></i> Haz clic en cualquier sector para explorar empresas exactas</span>
+                </div>
+
+                <!-- RESUMEN EJECUTIVO MACRO -->
+                <div class="glass-card-accent p-6 sm:p-8 rounded-3xl relative overflow-hidden shadow-2xl">
+                    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 relative z-10">
+                        <div>
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="px-3 py-1 rounded-md bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold text-xs uppercase tracking-wider flex items-center gap-1.5">
+                                    <i class="fas fa-check-circle"></i> Plan Recomendado Directo
+                                </span>
+                                <span class="px-3 py-1 rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-semibold text-xs">
+                                    Horizonte: Mediano Plazo (2-4 años)
+                                </span>
+                            </div>
+                            <h2 class="text-2xl sm:text-4xl font-black text-white tracking-tight">
+                                Orden Estratégica: <span class="text-gradient-emerald">Portafolio Multiactivo All-Weather</span>
+                            </h2>
+                            <p class="text-sm text-slate-300 mt-2 max-w-2xl leading-relaxed">
+                                Para tu capital de <strong class="text-white font-mono text-base">${amountStr}</strong>, la orden de la IA es distribuir el presupuesto en 4 frentes. **Presiona cualquier tarjeta para ver el desglose exacto de empresas y dividendos.**
+                            </p>
+                        </div>
+                        <div class="flex flex-col sm:flex-row lg:flex-col gap-3 w-full lg:w-auto">
+                            <button onclick="openTrustDrawer('allweather')" class="px-6 py-3.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl border border-slate-700 transition-all flex items-center justify-center gap-2 text-xs uppercase tracking-wider shadow-md hover:border-emerald-500/50">
+                                <i class="fas fa-shield-halved text-fintech-emerald"></i> ¿Por qué confiar en este plan?
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTORES INTERACTIVOS CON OPCIÓN DE DRILL-DOWN A MICRO Y BOTÓN GUARDAR -->
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                            <i class="fas fa-sitemap text-fintech-emerald"></i> Asignación de Sectores (Haz Clic para Ver Empresas)
+                        </h3>
+                        <span class="text-xs text-slate-400 font-mono">Presupuesto total: ${amountStr}</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        
+                        <!-- SECTOR 1: TECH -->
+                        <div class="glass-card p-5 rounded-2xl border-l-4 border-l-emerald-500 flex flex-col justify-between clickable-card group relative">
+                            <div onclick="renderMicroSectorView('tech', ${tech})">
+                                <div class="flex justify-between items-start mb-3">
+                                    <span class="px-2.5 py-1 rounded bg-emerald-500/20 text-emerald-400 font-extrabold text-[10px] uppercase tracking-wider">35% ASIGNADO</span>
+                                    <span class="text-xs text-emerald-400 group-hover:translate-x-1 transition-transform"><i class="fas fa-arrow-right"></i></span>
+                                </div>
+                                <h4 class="text-lg font-black text-white group-hover:text-emerald-400 transition-colors">Tecnología e IA</h4>
+                                <p class="text-xs text-slate-300 mt-1">Líderes en Inteligencia Artificial, software y la nube.</p>
+                            </div>
+                            <div class="mt-5 pt-4 border-t border-slate-800">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="text-[10px] uppercase text-slate-400 font-semibold">Monto</span>
+                                    <span class="text-lg font-black font-mono text-emerald-400">${format(tech)}</span>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2 mt-2">
+                                    <button onclick="renderMicroSectorView('tech', ${tech})" class="py-2 px-2 bg-emerald-500/10 rounded-xl text-emerald-400 font-bold text-[10px] text-center border border-emerald-500/20 hover:bg-emerald-500 hover:text-slate-950 transition-all">
+                                        <i class="fas fa-microchip mr-1"></i> Empresas
+                                    </button>
+                                    <button onclick="toggleTrackAsset('tech-allweather', 'Sector Tecnología e IA', 'TECH', ${tech})" id="btn-track-tech-allweather" class="py-2 px-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-300 font-bold text-[10px] text-center border border-slate-700 transition-all">
+                                        <i class="fas fa-check mr-1"></i> Invertido
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- SECTOR 2: S&P 500 -->
+                        <div class="glass-card p-5 rounded-2xl border-l-4 border-l-blue-500 flex flex-col justify-between clickable-card group relative">
+                            <div onclick="renderMicroSectorView('sp500', ${sp500})">
+                                <div class="flex justify-between items-start mb-3">
+                                    <span class="px-2.5 py-1 rounded bg-blue-500/20 text-blue-400 font-extrabold text-[10px] uppercase tracking-wider">35% ASIGNADO</span>
+                                    <span class="text-xs text-blue-400 group-hover:translate-x-1 transition-transform"><i class="fas fa-arrow-right"></i></span>
+                                </div>
+                                <h4 class="text-lg font-black text-white group-hover:text-blue-400 transition-colors">S&P 500 / Ancla EE.UU.</h4>
+                                <p class="text-xs text-slate-300 mt-1">Indexación diversificada a las 500 corporaciones top.</p>
+                            </div>
+                            <div class="mt-5 pt-4 border-t border-slate-800">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="text-[10px] uppercase text-slate-400 font-semibold">Monto</span>
+                                    <span class="text-lg font-black font-mono text-blue-400">${format(sp500)}</span>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2 mt-2">
+                                    <button onclick="renderMicroSectorView('sp500', ${sp500})" class="py-2 px-2 bg-blue-500/10 rounded-xl text-blue-400 font-bold text-[10px] text-center border border-blue-500/20 hover:bg-blue-500 hover:text-slate-950 transition-all">
+                                        <i class="fas fa-chart-pie mr-1"></i> ETFs
+                                    </button>
+                                    <button onclick="toggleTrackAsset('sp500-allweather', 'S&P 500 Indexado', 'VOO', ${sp500})" id="btn-track-sp500-allweather" class="py-2 px-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-300 font-bold text-[10px] text-center border border-slate-700 transition-all">
+                                        <i class="fas fa-check mr-1"></i> Invertido
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- SECTOR 3: COMMODITIES -->
+                        <div class="glass-card p-5 rounded-2xl border-l-4 border-l-amber-500 flex flex-col justify-between clickable-card group relative">
+                            <div onclick="renderMicroSectorView('commodities', ${goldComm})">
+                                <div class="flex justify-between items-start mb-3">
+                                    <span class="px-2.5 py-1 rounded bg-amber-500/20 text-amber-400 font-extrabold text-[10px] uppercase tracking-wider">20% ASIGNADO</span>
+                                    <span class="text-xs text-amber-400 group-hover:translate-x-1 transition-transform"><i class="fas fa-arrow-right"></i></span>
+                                </div>
+                                <h4 class="text-lg font-black text-white group-hover:text-amber-400 transition-colors">Materias Primas y Oro</h4>
+                                <p class="text-xs text-slate-300 mt-1">Cobertura anti-inflación, Cobre, Oro y Energía.</p>
+                            </div>
+                            <div class="mt-5 pt-4 border-t border-slate-800">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="text-[10px] uppercase text-slate-400 font-semibold">Monto</span>
+                                    <span class="text-lg font-black font-mono text-amber-400">${format(goldComm)}</span>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2 mt-2">
+                                    <button onclick="renderMicroSectorView('commodities', ${goldComm})" class="py-2 px-2 bg-amber-500/10 rounded-xl text-amber-400 font-bold text-[10px] text-center border border-amber-500/20 hover:bg-amber-500 hover:text-slate-950 transition-all">
+                                        <i class="fas fa-coins mr-1"></i> Oro/Mineras
+                                    </button>
+                                    <button onclick="toggleTrackAsset('comm-allweather', 'Materias Primas & Oro', 'GLD', ${goldComm})" id="btn-track-comm-allweather" class="py-2 px-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-300 font-bold text-[10px] text-center border border-slate-700 transition-all">
+                                        <i class="fas fa-check mr-1"></i> Invertido
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- SECTOR 4: CASH -->
+                        <div class="glass-card p-5 rounded-2xl border-l-4 border-l-slate-500 flex flex-col justify-between clickable-card group relative">
+                            <div onclick="renderMicroSectorView('cash', ${cash})">
+                                <div class="flex justify-between items-start mb-3">
+                                    <span class="px-2.5 py-1 rounded bg-slate-700/50 text-slate-300 font-extrabold text-[10px] uppercase tracking-wider">10% ASIGNADO</span>
+                                    <span class="text-xs text-slate-300 group-hover:translate-x-1 transition-transform"><i class="fas fa-arrow-right"></i></span>
+                                </div>
+                                <h4 class="text-lg font-black text-white group-hover:text-slate-200 transition-colors">Liquidez y Renta Fija</h4>
+                                <p class="text-xs text-slate-300 mt-1">Reserva en dólares al ~5.2% de interés anual.</p>
+                            </div>
+                            <div class="mt-5 pt-4 border-t border-slate-800">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="text-[10px] uppercase text-slate-400 font-semibold">Monto</span>
+                                    <span class="text-lg font-black font-mono text-slate-300">${format(cash)}</span>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2 mt-2">
+                                    <button onclick="renderMicroSectorView('cash', ${cash})" class="py-2 px-2 bg-slate-800 rounded-xl text-slate-300 font-bold text-[10px] text-center border border-slate-700 hover:bg-slate-200 hover:text-slate-950 transition-all">
+                                        <i class="fas fa-vault mr-1"></i> Instrumentos
+                                    </button>
+                                    <button onclick="toggleTrackAsset('cash-allweather', 'Reserva T-Bill / Cash', 'BIL', ${cash})" id="btn-track-cash-allweather" class="py-2 px-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-300 font-bold text-[10px] text-center border border-slate-700 transition-all">
+                                        <i class="fas fa-check mr-1"></i> Invertido
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- PROYECCIÓN VISUAL MONTE CARLO -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="glass-panel p-6 rounded-2xl lg:col-span-2 space-y-4">
+                        <h3 class="text-lg font-bold text-white flex items-center gap-2 border-b border-slate-800 pb-3">
+                            <i class="fas fa-route text-indigo-400"></i> Plan Operativo de Ejecución (3 Pasos)
+                        </h3>
+                        <div class="space-y-4">
+                            <div class="flex gap-4 items-start bg-slate-900/60 p-4 rounded-xl border border-slate-800">
+                                <div class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 font-black flex items-center justify-center shrink-0 border border-emerald-500/30">1</div>
+                                <div>
+                                    <h4 class="font-bold text-white text-sm">Selección de Sector</h4>
+                                    <p class="text-xs text-slate-300 mt-1">Haz clic en cualquiera de las 4 tarjetas superiores para ingresar a la vista micro y obtener las empresas exactas que componen esa partida presupuestaria.</p>
+                                </div>
+                            </div>
+                            <div class="flex gap-4 items-start bg-slate-900/60 p-4 rounded-xl border border-slate-800">
+                                <div class="w-8 h-8 rounded-full bg-indigo-500/20 text-indigo-400 font-black flex items-center justify-center shrink-0 border border-indigo-500/30">2</div>
+                                <div>
+                                    <h4 class="font-bold text-white text-sm">Ejecución en Broker Regulado</h4>
+                                    <p class="text-xs text-slate-300 mt-1">Ingresa a Interactive Brokers, eToro o tu broker local e introduce las siglas (Tickers) que te indicaremos en cada sección.</p>
+                                </div>
+                            </div>
+                            <div class="flex gap-4 items-start bg-slate-900/60 p-4 rounded-xl border border-slate-800">
+                                <div class="w-8 h-8 rounded-full bg-amber-500/20 text-amber-400 font-black flex items-center justify-center shrink-0 border border-amber-500/30">3</div>
+                                <div>
+                                    <h4 class="font-bold text-white text-sm">Marca tus Posiciones</h4>
+                                    <p class="text-xs text-slate-300 mt-1">Presiona el botón **[Invertido]** en cada tarjeta. El sistema rastreará los cambios de métricas y dividendos en tu Menú de Usuario.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass-card p-6 rounded-2xl flex flex-col justify-between">
+                        <div>
+                            <h3 class="text-lg font-bold text-white mb-1">Simulación Monte Carlo (3 Años)</h3>
+                            <p class="text-xs text-slate-400 mb-4">Escenario probabilístico de valor de portafolio.</p>
+                            <div class="relative w-full h-48">
+                                <canvas id="projectionChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-slate-800 flex justify-between text-xs">
+                            <span class="text-slate-400">Rendimiento Anual Esperado:</span>
+                            <span class="font-mono font-bold text-emerald-400">+11.2% CAGR</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            initProjectionChart(amountNum);
+            updateTrackButtonsUI();
+        }
+
+        function renderMicroSectorView(sectorId, sectorBudget) {
+            currentPortfolioState.activeSector = sectorId;
+            const container = document.getElementById('results-container');
+            clearCharts();
+
+            const parentTotal = currentPortfolioState.totalAmount;
+            const format = (v) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(v);
+
+            const SECTOR_DATA = {
+                tech: {
+                    title: 'Tecnología e Inteligencia Artificial',
+                    badgeColor: 'emerald',
+                    icon: 'fa-laptop-code',
+                    description: 'Desglose detallado de las corporaciones que dominan la infraestructura digital, modelos de IA y software empresarial.',
+                    companies: [
+                        {
+                            id: 'comp-aapl',
+                            name: 'Apple Inc.',
+                            ticker: 'AAPL',
+                            sharePercentage: 35,
+                            priceEst: 225,
+                            divYield: '0.55%',
+                            fcfYield: '4.2%',
+                            peRatio: '31x',
+                            badge: 'Refugio de Liquidez',
+                            color: 'border-l-slate-300',
+                            textColor: 'text-slate-200',
+                            description: 'Generador masivo de flujo libre de caja con programa activo de recompra de acciones ($100B). Protege el capital en caídas del mercado.'
+                        },
+                        {
+                            id: 'comp-meta',
+                            name: 'Meta Platforms',
+                            ticker: 'META',
+                            sharePercentage: 40,
+                            priceEst: 510,
+                            divYield: '0.40%',
+                            fcfYield: '4.8%',
+                            peRatio: '24x',
+                            badge: 'Crecimiento Eficiente + IA',
+                            color: 'border-l-blue-500',
+                            textColor: 'text-blue-400',
+                            description: 'Monopolio publicitario en Instagram/WhatsApp y líder global en IA Open Source (Llama 3). Rentabilidad extrema sobre patrimonio.'
+                        },
+                        {
+                            id: 'comp-botz',
+                            name: 'Global X Robotics & AI ETF',
+                            ticker: 'BOTZ',
+                            sharePercentage: 25,
+                            priceEst: 32,
+                            divYield: '0.18%',
+                            fcfYield: 'N/A (ETF)',
+                            peRatio: 'Sustentable',
+                            badge: 'Diversificación Exponencial',
+                            color: 'border-l-purple-500',
+                            textColor: 'text-purple-400',
+                            description: 'ETF indexado a las 40 mejores empresas de robótica industrial, automatización e IA aplicada a nivel global.'
+                        }
+                    ]
+                },
+                sp500: {
+                    title: 'Indexación S&P 500 y Dividendos Nobles',
+                    badgeColor: 'blue',
+                    icon: 'fa-chart-pie',
+                    description: 'Desglose del núcleo de renta variable de bajo costo para captura de crecimiento medio de mercado.',
+                    companies: [
+                        {
+                            id: 'comp-voo',
+                            name: 'Vanguard S&P 500 ETF',
+                            ticker: 'VOO',
+                            sharePercentage: 70,
+                            priceEst: 500,
+                            divYield: '1.42%',
+                            fcfYield: 'N/A (ETF)',
+                            peRatio: '26x',
+                            badge: 'Ancla Principal',
+                            color: 'border-l-blue-500',
+                            textColor: 'text-blue-400',
+                            description: 'Réplica de las 500 compañías norteamericanas de mayor capitalización. Terreno fértil con costo de gestión mínimo (0.03%).'
+                        },
+                        {
+                            id: 'comp-schd',
+                            name: 'Schwab US Dividend Equity ETF',
+                            ticker: 'SCHD',
+                            sharePercentage: 30,
+                            priceEst: 82,
+                            divYield: '3.45%',
+                            fcfYield: 'N/A (ETF)',
+                            peRatio: '16x',
+                            badge: 'Crecimiento de Dividendos',
+                            color: 'border-l-indigo-400',
+                            textColor: 'text-indigo-400',
+                            description: 'Empresas con más de 10 años pagando dividendos en aumento constante. Aporta flujo de caja directo a la cuenta.'
+                        }
+                    ]
+                },
+                commodities: {
+                    title: 'Materias Primas, Cobre y Metales Preciosos',
+                    badgeColor: 'amber',
+                    icon: 'fa-coins',
+                    description: 'Protección contra sorpresas inflacionarias, shocks geopolíticos y demanda inelástica de cobre para la transición de energía e IA.',
+                    companies: [
+                        {
+                            id: 'comp-gld',
+                            name: 'SPDR Gold Shares',
+                            ticker: 'GLD',
+                            sharePercentage: 50,
+                            priceEst: 230,
+                            divYield: '0.00%',
+                            fcfYield: 'Oro Físico',
+                            peRatio: 'N/A',
+                            badge: 'Resguardo de Valor',
+                            color: 'border-l-amber-500',
+                            textColor: 'text-amber-400',
+                            description: 'ETF respaldado 100% por lingotes de oro en bóvedas auditadas. Activo refugio de descorrelación pura.'
+                        },
+                        {
+                            id: 'comp-fcx',
+                            name: 'Freeport-McMoRan Inc.',
+                            ticker: 'FCX',
+                            sharePercentage: 30,
+                            priceEst: 45,
+                            divYield: '1.35%',
+                            fcfYield: '5.1%',
+                            peRatio: '22x',
+                            badge: 'Cobre / Datacenters',
+                            color: 'border-l-orange-500',
+                            textColor: 'text-orange-400',
+                            description: 'Mayor productor mundial de cobre. Insumo indispensable para la red eléctrica que alimenta los servidores de Inteligencia Artificial.'
+                        },
+                        {
+                            id: 'comp-xom',
+                            name: 'ExxonMobil Corp.',
+                            ticker: 'XOM',
+                            sharePercentage: 20,
+                            priceEst: 118,
+                            divYield: '3.30%',
+                            fcfYield: '6.8%',
+                            peRatio: '14x',
+                            badge: 'Dividendos Energéticos',
+                            color: 'border-l-rose-500',
+                            textColor: 'text-rose-400',
+                            description: 'Gigante petrolero con costo de extracción bajo por barril. Generador masivo de efectivo y pagos trimestrales.'
+                        }
+                    ]
+                },
+                cash: {
+                    title: 'Liquidez Inmediata y Renta Fija',
+                    badgeColor: 'slate',
+                    icon: 'fa-vault',
+                    description: 'Capital en reserva asignado a instrumentos libres de riesgo para capitalizar correcciones de mercado o emergencias.',
+                    companies: [
+                        {
+                            id: 'comp-bil',
+                            name: 'SPDR 1-3 Month T-Bill ETF',
+                            ticker: 'BIL',
+                            sharePercentage: 60,
+                            priceEst: 91,
+                            divYield: '5.15%',
+                            fcfYield: 'Deuda EE.UU.',
+                            peRatio: 'Riesgo Cero',
+                            badge: 'Renta Fija Corto Plazo',
+                            color: 'border-l-emerald-400',
+                            textColor: 'text-emerald-400',
+                            description: 'Bonos del Tesoro de EE.UU. a corto plazo. Interés acumulado de forma segura sin riesgo de crédito.'
+                        },
+                        {
+                            id: 'comp-usd-cash',
+                            name: 'Efectivo en Broker / Fondo Monetario',
+                            ticker: 'USD-CASH',
+                            sharePercentage: 40,
+                            priceEst: 1,
+                            divYield: '4.80%',
+                            fcfYield: 'Liquidez 100%',
+                            peRatio: 'Inmediato',
+                            badge: 'Oportunismo',
+                            color: 'border-l-slate-400',
+                            textColor: 'text-slate-300',
+                            description: 'Dinero disponible en la cuenta del broker acumulando interés diario para comprar activos en caídas del >10%.'
+                        }
+                    ]
+                }
+            };
+
+            const data = SECTOR_DATA[sectorId] || SECTOR_DATA.tech;
+
+            container.innerHTML = `
+                <!-- BREADCRUMB HEADER NAV -->
+                <div class="flex flex-wrap items-center justify-between bg-slate-900 p-4 rounded-2xl border border-slate-800 text-xs gap-3">
+                    <div class="flex items-center gap-2 text-slate-300 flex-wrap">
+                        <button onclick="renderAllWeatherView(currentPortfolioState.formattedAmount, currentPortfolioState.totalAmount)" class="text-fintech-emerald font-bold hover:underline flex items-center gap-1 bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20">
+                            <i class="fas fa-arrow-left text-xs"></i> Volver a Portafolio General
+                        </button>
+                        <span class="text-slate-600">/</span>
+                        <span class="text-slate-400">Sector Seleccionado:</span>
+                        <span class="font-bold text-white">${data.title}</span>
+                    </div>
+                    <div class="font-mono text-emerald-400 font-black text-sm">
+                        Presupuesto Asignado: ${format(sectorBudget)} <span class="text-slate-400 text-xs font-normal">(${Math.round((sectorBudget/parentTotal)*100)}% del total)</span>
+                    </div>
+                </div>
+
+                <!-- ENCABEZADO DE SECTOR MICRO -->
+                <div class="glass-card p-6 sm:p-8 rounded-3xl border-l-4 border-l-fintech-emerald shadow-2xl">
+                    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+                        <div>
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="px-3 py-1 rounded-md bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold text-xs uppercase tracking-wider flex items-center gap-1.5">
+                                    <i class="fas ${data.icon}"></i> Desglose Micro-Nivel
+                                </span>
+                                <span class="px-3 py-1 rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-semibold text-xs">
+                                    Presupuesto Activo: ${format(sectorBudget)}
+                                </span>
+                            </div>
+                            <h2 class="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                                Plan de Compra por Empresa: <span class="text-gradient-emerald">${data.title}</span>
+                            </h2>
+                            <p class="text-sm text-slate-300 mt-2 max-w-3xl leading-relaxed">
+                                ${data.description} A continuación verás los montos exactos en dólares, cálculo estimado de acciones y las métricas financieras de dividendos que justifican cada posición.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TARJETAS DETALLADAS DE EMPRESAS/ETFS CON BOTÓN DE "INVERTIDO/GUARDADO" -->
+                <div class="space-y-4">
+                    <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                        <i class="fas fa-list-check text-fintech-emerald"></i> Ordenes Individuales de Compra Sugeridas
+                    </h3>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                        ${data.companies.map(c => {
+                            const companyAmount = Math.round(sectorBudget * (c.sharePercentage / 100));
+                            const estimatedShares = Math.max(1, Math.round(companyAmount / c.priceEst));
+
+                            return `
+                                <div class="glass-card p-6 rounded-2xl border-l-4 ${c.color} flex flex-col justify-between hover:bg-slate-900/70 transition-all shadow-lg">
+                                    <div>
+                                        <!-- Header de la Empresa -->
+                                        <div class="flex justify-between items-start mb-3">
+                                            <div>
+                                                <span class="px-2.5 py-1 rounded bg-slate-800 text-slate-300 font-extrabold font-mono text-[11px] uppercase tracking-wider">${c.ticker}</span>
+                                                <span class="text-[10px] text-slate-400 ml-1.5 font-semibold">${c.sharePercentage}% del sector</span>
+                                            </div>
+                                            <span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-[10px] font-bold border border-emerald-500/20">${c.badge}</span>
+                                        </div>
+
+                                        <h4 class="text-xl font-black text-white mb-1">${c.name}</h4>
+                                        <p class="text-xs text-slate-300 leading-relaxed mb-4">${c.description}</p>
+
+                                        <!-- Métricas Financieras Clave -->
+                                        <div class="grid grid-cols-3 gap-2 py-2.5 px-3 bg-slate-950/70 rounded-xl border border-slate-800/80 mb-4 text-center">
+                                            <div>
+                                                <span class="text-[9px] uppercase text-slate-400 block font-bold">Dividendos</span>
+                                                <span class="text-xs font-mono font-bold text-emerald-400">${c.divYield}</span>
+                                            </div>
+                                            <div>
+                                                <span class="text-[9px] uppercase text-slate-400 block font-bold">FCF Yield</span>
+                                                <span class="text-xs font-mono font-bold text-indigo-300">${c.fcfYield}</span>
+                                            </div>
+                                            <div>
+                                                <span class="text-[9px] uppercase text-slate-400 block font-bold">Valuación</span>
+                                                <span class="text-xs font-mono font-bold text-amber-300">${c.peRatio}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Bloque Final de Monto, Estimado y Acción -->
+                                    <div class="pt-4 border-t border-slate-800 space-y-3">
+                                        <div class="flex justify-between items-end">
+                                            <div>
+                                                <span class="text-[10px] uppercase text-slate-400 block font-semibold">Monto Sugerido</span>
+                                                <div class="text-2xl font-black font-mono ${c.textColor}">${format(companyAmount)}</div>
+                                            </div>
+                                            <div class="text-right">
+                                                <span class="text-[10px] uppercase text-slate-400 block font-semibold">Cálculo Estimado</span>
+                                                <span class="text-xs font-mono font-bold text-slate-200">~${estimatedShares} ${c.ticker === 'USD-CASH' ? 'USD' : 'acciones'}</span>
+                                            </div>
+                                        </div>
+
+                                        <button onclick="toggleTrackAsset('${c.id}', '${c.name}', '${c.ticker}', ${companyAmount})" id="btn-track-${c.id}" class="w-full py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-xl border border-slate-700 flex items-center justify-center gap-2 transition-all">
+                                            <i class="fas fa-bookmark text-emerald-400"></i> <span>Marcar como Invertido</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+
+                <!-- GRÁFICO DE COMPOSICIÓN MICRO SECTORIAL -->
+                <div class="glass-card p-6 rounded-2xl">
+                    <h3 class="text-lg font-bold text-white mb-1">Distribución de Tickers en este Sector</h3>
+                    <p class="text-xs text-slate-400 mb-4">Proporción del presupuesto de ${format(sectorBudget)} repartido por activo.</p>
+                    <div class="relative w-full h-52">
+                        <canvas id="microSectorChart"></canvas>
+                    </div>
+                </div>
+            `;
+
+            initMicroSectorChart(data.companies.map(c => c.ticker), data.companies.map(c => Math.round(sectorBudget * (c.sharePercentage / 100))));
+            updateTrackButtonsUI();
+            window.scrollTo({ top: 180, behavior: 'smooth' });
+        }
+
+        function renderSectorView(amountStr, amountNum) {
+            renderMicroSectorView('tech', amountNum);
+        }
+
+        function renderNicheView(amountStr, amountNum) {
+            const container = document.getElementById('results-container');
+            const smhAmount = Math.round(amountNum * 0.70);
+            const nvdaAmount = Math.round(amountNum * 0.30);
+            const format = (v) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(v);
+
+            container.innerHTML = `
+                <div class="flex items-center justify-between bg-slate-900 p-3.5 rounded-2xl border border-slate-800 text-xs">
+                    <button onclick="renderAllWeatherView(currentPortfolioState.formattedAmount, currentPortfolioState.totalAmount)" class="text-fintech-emerald font-bold hover:underline flex items-center gap-1 bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20">
+                        <i class="fas fa-arrow-left text-xs"></i> Volver a Portafolio General
+                    </button>
+                    <span class="font-mono text-cyan-400 font-bold">Monto Objetivo: ${amountStr}</span>
+                </div>
+
+                <div class="glass-card p-6 sm:p-8 rounded-3xl border-l-4 border-l-cyan-500 shadow-2xl">
+                    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+                        <div>
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="px-3 py-1 rounded-md bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 font-bold text-xs uppercase tracking-wider">
+                                    <i class="fas fa-microchip"></i> Nicho Ultra Especializado
+                                </span>
+                                <span class="px-3 py-1 rounded-md bg-rose-500/20 text-rose-400 border border-rose-500/30 font-semibold text-xs">
+                                    Riesgo / Volatilidad: Alta
+                                </span>
+                            </div>
+                            <h2 class="text-2xl sm:text-4xl font-black text-white tracking-tight">
+                                Evaluación: <span class="text-cyan-400">Industria Global de Semiconductores</span>
+                            </h2>
+                            <p class="text-sm text-slate-300 mt-2 max-w-2xl leading-relaxed">
+                                Invertir <strong class="text-white font-mono">${amountStr}</strong> en microchips representa comprar la infraestructura crítica del mundo digital.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    
+                    <div class="glass-card p-6 rounded-2xl border-l-4 border-l-cyan-400 flex flex-col justify-between">
+                        <div>
+                            <span class="px-2.5 py-1 rounded bg-cyan-500/20 text-cyan-300 font-extrabold text-xs uppercase">Estrategia Núcleo (70%)</span>
+                            <h3 class="text-xl font-bold text-white mt-3">VanEck Semiconductor ETF (SMH)</h3>
+                            <p class="text-xs text-slate-300 mt-2">Cesta diversificada con las 25 empresas líderes mundiales (NVIDIA, TSMC, ASML, Broadcom).</p>
+                        </div>
+                        <div class="mt-6 pt-4 border-t border-slate-800 flex items-center justify-between">
+                            <div>
+                                <span class="text-[10px] uppercase text-slate-400 font-semibold">Monto Sugerido</span>
+                                <div class="text-2xl font-black font-mono text-cyan-400">${format(smhAmount)}</div>
+                            </div>
+                            <button onclick="toggleTrackAsset('niche-smh', 'VanEck Semiconductor ETF', 'SMH', ${smhAmount})" id="btn-track-niche-smh" class="py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-xl border border-slate-700">
+                                Marcar Invertido
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="glass-card p-6 rounded-2xl border-l-4 border-l-emerald-400 flex flex-col justify-between">
+                        <div>
+                            <span class="px-2.5 py-1 rounded bg-emerald-500/20 text-emerald-300 font-extrabold text-xs uppercase">Alpha Directo (30%)</span>
+                            <h3 class="text-xl font-bold text-white mt-3">NVIDIA Corp (NVDA)</h3>
+                            <p class="text-xs text-slate-300 mt-2">Líder absoluto en GPUs para centros de datos de IA con márgenes operativos del 60%.</p>
+                        </div>
+                        <div class="mt-6 pt-4 border-t border-slate-800 flex items-center justify-between">
+                            <div>
+                                <span class="text-[10px] uppercase text-slate-400 font-semibold">Monto Sugerido</span>
+                                <div class="text-2xl font-black font-mono text-emerald-400">${format(nvdaAmount)}</div>
+                            </div>
+                            <button onclick="toggleTrackAsset('niche-nvda', 'NVIDIA Corp', 'NVDA', ${nvdaAmount})" id="btn-track-niche-nvda" class="py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-xl border border-slate-700">
+                                Marcar Invertido
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            `;
+            updateTrackButtonsUI();
+        }
+
+        function initProjectionChart(baseAmount) {
+            const ctx = document.getElementById('projectionChart');
+            if (!ctx) return;
+
+            const labels = ['Hoy', 'Año 1', 'Año 2', 'Año 3'];
+            const expected = [baseAmount, Math.round(baseAmount * 1.112), Math.round(baseAmount * 1.236), Math.round(baseAmount * 1.375)];
+            const conservative = [baseAmount, Math.round(baseAmount * 1.04), Math.round(baseAmount * 1.085), Math.round(baseAmount * 1.13)];
+
+            const chart = new Chart(ctx.getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Proyección Esperada IA (+11.2% CAGR)',
+                            data: expected,
+                            borderColor: '#10B981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.3,
+                            pointBackgroundColor: '#10B981'
+                        },
+                        {
+                            label: 'Escenario Conservador / Basal',
+                            data: conservative,
+                            borderColor: '#64748B',
+                            borderWidth: 2,
+                            borderDash: [4, 4],
+                            fill: false,
+                            tension: 0.3,
+                            pointRadius: 0
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9CA3AF', font: { size: 10 }, callback: (v) => '$' + (v/1000) + 'k' } },
+                        x: { grid: { display: false }, ticks: { color: '#9CA3AF', font: { size: 10 } } }
+                    }
+                }
+            });
+            activeCharts.push(chart);
+        }
+
+        function initMicroSectorChart(tickers, amounts) {
+            const ctx = document.getElementById('microSectorChart');
+            if (!ctx) return;
+
+            const chart = new Chart(ctx.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: tickers,
+                    datasets: [{
+                        label: 'Inversión en USD',
+                        data: amounts,
+                        backgroundColor: ['#10B981', '#6366F1', '#F59E0B', '#06B6D4'],
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9CA3AF', callback: (v) => '$' + v.toLocaleString() } },
+                        x: { grid: { display: false }, ticks: { color: '#F9FAFB', font: { weight: 'bold' } } }
+                    }
+                }
+            });
+            activeCharts.push(chart);
+        }
+
+        function toggleTrackAsset(id, name, ticker, amount) {
+            const index = trackedInvestments.findIndex(item => item.id === id);
+            
+            if (index >= 0) {
+                // Remove asset
+                trackedInvestments.splice(index, 1);
+                showToast(`Posición ${ticker} removida de tu portafolio guardado.`, 'info');
+            } else {
+                // Add asset
+                const dateStr = new Date().toISOString().split('T')[0];
+                trackedInvestments.push({
+                    id: id,
+                    name: name,
+                    ticker: ticker,
+                    amount: amount,
+                    status: 'Invertido',
+                    date: dateStr,
+                    change: '+0.0%'
+                });
+                showToast(`¡${ticker} marcado como INVERTIDO y agregado a tu perfil!`, 'success');
+            }
+
+            updateTrackButtonsUI();
+            renderUserTrackedList();
+        }
+
+        function updateTrackButtonsUI() {
+            trackedInvestments.forEach(item => {
+                const btn = document.getElementById(`btn-track-${item.id}`);
+                if (btn) {
+                    btn.className = "py-2 px-2 bg-emerald-500 text-slate-950 font-extrabold text-[10px] text-center rounded-xl transition-all shadow-glow-emerald border border-emerald-400 flex items-center justify-center gap-1";
+                    btn.innerHTML = `<i class="fas fa-check-circle"></i> Invertido`;
+                }
+            });
+        }
+
+        function toggleNotificationsMenu() {
+            const dropdown = document.getElementById('notif-dropdown');
+            dropdown.classList.toggle('hidden');
+            renderNotifications();
+        }
+
+        function renderNotifications() {
+            const container = document.getElementById('notif-list');
+            if (notificationsList.length === 0) {
+                container.innerHTML = `<div class="p-4 text-center text-xs text-slate-400">Sin notificaciones nuevas.</div>`;
+                return;
+            }
+
+            container.innerHTML = notificationsList.map(n => `
+                <div class="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs hover:border-slate-700 transition-all flex items-start gap-2.5">
+                    <span class="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 font-bold font-mono text-[10px] flex items-center justify-center shrink-0 border border-emerald-500/30">${n.ticker}</span>
+                    <div class="flex-1">
+                        <div class="flex justify-between items-center mb-0.5">
+                            <span class="font-bold text-white text-xs">${n.title}</span>
+                            <span class="text-[9px] text-slate-500">${n.time}</span>
+                        </div>
+                        <p class="text-[11px] text-slate-300 leading-tight">${n.desc}</p>
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('notif-badge').innerText = notificationsList.length;
+        }
+
+        function clearNotifications() {
+            notificationsList = [];
+            renderNotifications();
+            document.getElementById('notif-badge').innerText = '0';
+        }
+
+        function openUserModal() {
+            renderUserTrackedList();
+            const overlay = document.getElementById('user-modal-overlay');
+            overlay.classList.remove('hidden');
+            setTimeout(() => overlay.classList.remove('opacity-0'), 10);
+        }
+
+        function closeUserModal() {
+            const overlay = document.getElementById('user-modal-overlay');
+            overlay.classList.add('opacity-0');
+            setTimeout(() => overlay.classList.add('hidden'), 300);
+        }
+
+        function switchUserTab(tab) {
+            const trackedTab = document.getElementById('user-tab-tracked');
+            const settingsTab = document.getElementById('user-tab-settings');
+            const trackedBtn = document.getElementById('user-tab-tracked-btn');
+            const settingsBtn = document.getElementById('user-tab-settings-btn');
+
+            if (tab === 'settings') {
+                trackedTab.classList.add('hidden');
+                settingsTab.classList.remove('hidden');
+                settingsBtn.className = "flex-1 py-3 px-4 border-b-2 border-indigo-500 text-indigo-400 transition-all flex items-center justify-center gap-2";
+                trackedBtn.className = "flex-1 py-3 px-4 border-b-2 border-transparent text-slate-400 hover:text-white transition-all flex items-center justify-center gap-2";
+            } else {
+                settingsTab.classList.add('hidden');
+                trackedTab.classList.remove('hidden');
+                trackedBtn.className = "flex-1 py-3 px-4 border-b-2 border-emerald-500 text-emerald-400 transition-all flex items-center justify-center gap-2";
+                settingsBtn.className = "flex-1 py-3 px-4 border-b-2 border-transparent text-slate-400 hover:text-white transition-all flex items-center justify-center gap-2";
+            }
+        }
+
+        function renderUserTrackedList() {
+            const container = document.getElementById('user-tracked-list');
+            document.getElementById('user-tracked-count').innerText = trackedInvestments.length;
+
+            let total = 0;
+            trackedInvestments.forEach(item => total += item.amount);
+            document.getElementById('user-total-tracked-amount').innerText = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(total);
+
+            if (trackedInvestments.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 text-xs text-slate-400">
+                        <i class="fas fa-folder-open text-2xl mb-2 text-slate-600 block"></i>
+                        Aún no has marcado ninguna inversión como invertida.
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = trackedInvestments.map(item => `
+                <div class="p-3.5 bg-slate-900 rounded-xl border border-slate-800 flex items-center justify-between">
+                    <div>
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="font-mono font-bold text-xs bg-slate-800 text-emerald-400 px-2 py-0.5 rounded border border-slate-700">${item.ticker}</span>
+                            <span class="font-bold text-white text-xs">${item.name}</span>
+                        </div>
+                        <span class="text-[10px] text-slate-400">Registrado: ${item.date} • Estado: <strong class="text-emerald-400">${item.status}</strong></span>
+                    </div>
+                    <div class="text-right flex items-center gap-3">
+                        <div>
+                            <div class="font-mono font-bold text-white text-sm">$${item.amount.toLocaleString()}</div>
+                            <span class="text-[10px] text-emerald-400 font-bold">${item.change}</span>
+                        </div>
+                        <button onclick="toggleTrackAsset('${item.id}', '${item.name}', '${item.ticker}', ${item.amount})" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-rose-500/20 hover:text-rose-400 text-slate-500 flex items-center justify-center text-xs transition-all">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function saveUserProfile() {
+            const newName = document.getElementById('input-profile-name').value.trim();
+            const newEmail = document.getElementById('input-profile-email').value.trim();
+
+            if (newName) {
+                document.getElementById('header-user-name').innerText = newName;
+                document.getElementById('modal-user-display-name').innerText = newName;
+            }
+            if (newEmail) {
+                document.getElementById('modal-user-display-email').innerText = newEmail;
+            }
+
+            showToast('Perfil actualizado correctamente.', 'success');
+            closeUserModal();
+        }
+
+        function filterGuideTerms() {
+            const query = document.getElementById('guide-search-input').value.toLowerCase().trim();
+            const cards = document.querySelectorAll('.guide-card');
+
+            cards.forEach(card => {
+                const keywords = card.getAttribute('data-keywords') || '';
+                const text = card.innerText.toLowerCase();
+                if (!query || text.includes(query) || keywords.includes(query)) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        function filterGuideCategory(cat) {
+            const btns = document.querySelectorAll('.guide-cat-btn');
+            btns.forEach(b => {
+                b.className = "guide-cat-btn px-3.5 py-2 rounded-xl bg-slate-900 text-slate-300 hover:bg-slate-800 border border-slate-800 text-xs font-semibold transition-all";
+            });
+            if (event && event.target) {
+                event.target.className = "guide-cat-btn active px-3.5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold transition-all";
+            }
+
+            const cards = document.querySelectorAll('.guide-card');
+            cards.forEach(card => {
+                if (cat === 'all' || card.getAttribute('data-category') === cat) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `p-3.5 rounded-xl glass-card text-xs text-white border ${type === 'success' ? 'border-emerald-500/50 text-emerald-300' : 'border-indigo-500/50 text-indigo-300'} shadow-2xl flex items-center gap-2 animate-slide-up pointer-events-auto`;
+            toast.innerHTML = `<i class="fas ${type === 'success' ? 'fa-circle-check text-emerald-400' : 'fa-circle-info text-indigo-400'}"></i> <span>${message}</span>`;
+            
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.remove();
+            }, 3500);
+        }
+
+        const TRUST_CONTENT = {
+            allweather: `
+                <div class="space-y-6">
+                    <div class="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-black text-lg">
+                                94%
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-white text-sm">Índice de Confianza Algorítmica</h4>
+                                <p class="text-xs text-slate-300">Validado sobre 10,000 iteraciones de Monte Carlo con datos de 25 años.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <h4 class="font-bold text-white text-sm border-b border-slate-800 pb-2">Respaldos Matemáticos Clave</h4>
+                        
+                        <div class="p-4 bg-slate-900 rounded-xl border border-slate-800 space-y-2">
+                            <div class="flex justify-between text-xs font-mono">
+                                <span class="text-slate-400">Ratio de Sharpe (Eficiencia):</span>
+                                <span class="text-emerald-400 font-bold">1.85 (Excelente)</span>
+                            </div>
+                            <p class="text-[11px] text-slate-300">Mide cuánta ganancia obtienes por cada unidad de riesgo asumida. Un Sharpe > 1.5 indica un retorno superior con volatilidad muy contenida.</p>
+                        </div>
+
+                        <div class="p-4 bg-slate-900 rounded-xl border border-slate-800 space-y-2">
+                            <div class="flex justify-between text-xs font-mono">
+                                <span class="text-slate-400">Máximo Desplome Histórico (Max Drawdown):</span>
+                                <span class="text-amber-400 font-bold">-11.4% (vs -24.5% del S&P 500)</span>
+                            </div>
+                            <p class="text-[11px] text-slate-300">En la peor crisis del período analizado, este portafolio cayó menos de la mitad que el mercado tradicional gracias a la cobertura en oro y efectivo.</p>
+                        </div>
+                    </div>
+                </div>
+            `
+        };
+
+        function openTrustDrawer(scenario = 'allweather') {
+            document.getElementById('trust-content').innerHTML = TRUST_CONTENT[scenario] || TRUST_CONTENT.allweather;
+            const overlay = document.getElementById('drawer-overlay');
+            const drawer = document.getElementById('trust-drawer');
+            overlay.classList.remove('hidden');
+            setTimeout(() => overlay.classList.remove('opacity-0'), 10);
+            drawer.classList.remove('translate-x-full');
+        }
+
+        function closeDrawers() {
+            const overlay = document.getElementById('drawer-overlay');
+            const trustDrawer = document.getElementById('trust-drawer');
+            
+            overlay.classList.add('opacity-0');
+            trustDrawer.classList.add('translate-x-full');
+            setTimeout(() => overlay.classList.add('hidden'), 300);
+        }
+
+        document.getElementById('prompt-input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                processPrompt();
+            }
+        });
+
+        // Initialize default notifications render
+        renderNotifications();
+    </script>
+</body>
+</html>
