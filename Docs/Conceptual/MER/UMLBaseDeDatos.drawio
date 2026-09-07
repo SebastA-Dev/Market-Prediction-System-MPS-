@@ -1,0 +1,133 @@
+<mxGraphModel dx="1486" dy="894" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="950" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+    <mxCell id="frame_rdbms" parent="1" style="shape=swimlane;whiteSpace=wrap;html=1;startSize=28;strokeWidth=2;fontStyle=1;fontSize=13;collapsible=0;labelBackgroundColor=none;" value="RDBMS — PostgreSQL (Gestión de Usuarios, Preferencias y Alertas)" vertex="1">
+      <mxGeometry height="780" width="560" x="30" y="30" as="geometry" />
+    </mxCell>
+    <mxCell id="ent_user" parent="frame_rdbms" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;align=left;strokeWidth=1.5;labelBackgroundColor=none;" value="&lt;p style=&quot;margin:0px;margin-top:6px;text-align:center;&quot;&gt;&lt;b&gt;USER&lt;/b&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot; style=&quot;border-color:#3B82F6;margin:0px;&quot;&gt;&lt;p style=&quot;margin:0px;margin-left:8px;margin-top:4px;padding-bottom:6px;font-family:monospace;font-size:11px;&quot;&gt;&lt;b&gt;[PK] id&lt;/b&gt; : UUID&lt;br&gt;* email : VARCHAR(255)&lt;br&gt;* password_hash : VARCHAR(255)&lt;br&gt;* created_at : TIMESTAMP&lt;/p&gt;" vertex="1">
+      <mxGeometry height="120" width="220" x="30" y="60" as="geometry" />
+    </mxCell>
+    <mxCell id="ent_asset" parent="frame_rdbms" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;align=left;strokeWidth=1.5;labelBackgroundColor=none;" value="&lt;p style=&quot;margin:0px;margin-top:6px;text-align:center;&quot;&gt;&lt;b&gt;ASSET&lt;/b&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot; style=&quot;border-color:#3B82F6;margin:0px;&quot;&gt;&lt;p style=&quot;margin:0px;margin-left:8px;margin-top:4px;padding-bottom:6px;font-family:monospace;font-size:11px;&quot;&gt;&lt;b&gt;[PK] ticker&lt;/b&gt; : VARCHAR(20)&lt;br&gt;* name : VARCHAR(100)&lt;br&gt;* sector : VARCHAR(50)&lt;br&gt;* is_active : BOOLEAN&lt;/p&gt;" vertex="1">
+      <mxGeometry height="120" width="220" x="310" y="60" as="geometry" />
+    </mxCell>
+    <mxCell id="ent_user_config" parent="frame_rdbms" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;align=left;strokeWidth=1.5;labelBackgroundColor=none;" value="&lt;p style=&quot;margin:0px;margin-top:6px;text-align:center;&quot;&gt;&lt;b&gt;USER_CONFIGURATION&lt;/b&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot; style=&quot;border-color:#3B82F6;margin:0px;&quot;&gt;&lt;p style=&quot;margin:0px;margin-left:8px;margin-top:4px;padding-bottom:6px;font-family:monospace;font-size:11px;&quot;&gt;&lt;b&gt;[PK] id&lt;/b&gt; : UUID&lt;br&gt;&lt;b&gt;[FK] user_id&lt;/b&gt; : UUID&lt;br&gt;&lt;b&gt;[FK] target_ticker&lt;/b&gt; : VARCHAR(20)&lt;br&gt;* alerts_enabled : BOOLEAN&lt;br&gt;* created_at : TIMESTAMP&lt;/p&gt;" vertex="1">
+      <mxGeometry height="140" width="240" x="160" y="270" as="geometry" />
+    </mxCell>
+    <mxCell id="ent_alert_history" parent="frame_rdbms" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;align=left;strokeWidth=1.5;labelBackgroundColor=none;" value="&lt;p style=&quot;margin:0px;margin-top:6px;text-align:center;&quot;&gt;&lt;b&gt;ALERT_HISTORY&lt;/b&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot; style=&quot;border-color:#3B82F6;margin:0px;&quot;&gt;&lt;p style=&quot;margin:0px;margin-left:8px;margin-top:4px;padding-bottom:6px;font-family:monospace;font-size:11px;&quot;&gt;&lt;b&gt;[PK] id&lt;/b&gt; : UUID&lt;br&gt;&lt;b&gt;[FK] user_id&lt;/b&gt; : UUID&lt;br&gt;&lt;b&gt;[FK] ticker&lt;/b&gt; : VARCHAR(20)&lt;br&gt;* price : DECIMAL(18,4)&lt;br&gt;* signal : VARCHAR(10)&lt;br&gt;* triggered_at : TIMESTAMP&lt;/p&gt;" vertex="1">
+      <mxGeometry height="150" width="240" x="160" y="520" as="geometry" />
+    </mxCell>
+    <mxCell id="rel_user_config" edge="1" parent="frame_rdbms" source="ent_user" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;strokeWidth=1.5;fontSize=10;fontColor=default;verticalAlign=bottom;labelBackgroundColor=none;" target="ent_user_config" value="define (1:N)">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="140" y="340" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="rel_asset_config" edge="1" parent="frame_rdbms" source="ent_asset" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;strokeWidth=1.5;fontSize=10;fontColor=default;verticalAlign=bottom;labelBackgroundColor=none;" target="ent_user_config" value="monitorea (1:N)">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="420" y="340" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="rel_user_history" edge="1" parent="frame_rdbms" source="ent_user" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;strokeWidth=1.5;fontSize=10;fontColor=default;verticalAlign=bottom;labelBackgroundColor=none;" target="ent_alert_history" value="recibe (1:N)">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="80" y="220" />
+          <mxPoint x="80" y="595" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="rel_asset_history" edge="1" parent="frame_rdbms" source="ent_asset" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;strokeWidth=1.5;fontSize=10;fontColor=default;verticalAlign=bottom;labelBackgroundColor=none;" target="ent_alert_history" value="origina (1:N)">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="480" y="220" />
+          <mxPoint x="480" y="595" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="frame_nosql" parent="1" style="shape=swimlane;whiteSpace=wrap;html=1;startSize=28;strokeWidth=2;fontStyle=1;fontSize=13;collapsible=0;labelBackgroundColor=none;" value="DOCUMENT STORE — MongoDB (Audit Logs &amp; Pipeline Analítico Streaming)" vertex="1">
+      <mxGeometry height="780" width="890" x="710" y="30" as="geometry" />
+    </mxCell>
+    <mxCell id="doc_intent_logs" parent="frame_nosql" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;align=left;strokeWidth=1.5;labelBackgroundColor=none;" value="&lt;p style=&quot;margin:0px;margin-top:6px;text-align:center;&quot;&gt;&lt;b&gt;INTENT_PREDICTION_LOG&lt;/b&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot; style=&quot;border-color:#16A34A;margin:0px;&quot;&gt;&lt;p style=&quot;margin:0px;margin-left:8px;margin-top:4px;padding-bottom:6px;font-family:monospace;font-size:11px;&quot;&gt;&lt;b&gt;[PK] _id&lt;/b&gt; : OBJECT_ID&lt;br&gt;&lt;b&gt;[REF] user_id&lt;/b&gt; : UUID (Nullable)&lt;br&gt;* timestamp : TIMESTAMP&lt;br&gt;* raw_prompt : TEXT&lt;br&gt;* classified_intent : VARCHAR(30)&lt;br&gt;o parsed_amount : DOUBLE&lt;br&gt;o parsed_sector : VARCHAR(50)&lt;br&gt;o parsed_ticker : VARCHAR(20)&lt;br&gt;* execution_time_ms : INTEGER&lt;/p&gt;" vertex="1">
+      <mxGeometry height="170" width="250" x="30" y="50" as="geometry" />
+    </mxCell>
+    <mxCell id="doc_market_tick" parent="frame_nosql" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;align=left;strokeWidth=2;labelBackgroundColor=none;" value="&lt;p style=&quot;margin:0px;margin-top:6px;text-align:center;&quot;&gt;&lt;b&gt;MARKET_TICK (market_ticks_and_features)&lt;/b&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot; style=&quot;border-color:#16A34A;margin:0px;&quot;&gt;&lt;p style=&quot;margin:0px;margin-left:8px;margin-top:4px;padding-bottom:6px;font-family:monospace;font-size:11px;&quot;&gt;&lt;b&gt;[PK] _id&lt;/b&gt; : OBJECT_ID&lt;br&gt;&lt;b&gt;[REF] ticker&lt;/b&gt; : VARCHAR(20)&lt;br&gt;* timestamp : TIMESTAMP&lt;br&gt;&lt;i&gt;-- Índices: {ticker:1, timestamp:-1} --&lt;/i&gt;&lt;/p&gt;" vertex="1">
+      <mxGeometry height="110" width="280" x="320" y="270" as="geometry" />
+    </mxCell>
+    <mxCell id="sub_raw_data" parent="frame_nosql" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;align=left;strokeWidth=1.2;labelBackgroundColor=none;" value="&lt;p style=&quot;margin:0px;margin-top:6px;text-align:center;&quot;&gt;&lt;b&gt;&amp;lt;&amp;lt;embedded&amp;gt;&amp;gt;&lt;br&gt;RAW_MARKET_DATA&lt;/b&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot; style=&quot;border-color:#16A34A;margin:0px;&quot;&gt;&lt;p style=&quot;margin:0px;margin-left:8px;margin-top:4px;padding-bottom:6px;font-family:monospace;font-size:11px;&quot;&gt;* price : DOUBLE&lt;br&gt;* volume : DOUBLE&lt;/p&gt;" vertex="1">
+      <mxGeometry height="90" width="180" x="30" y="470" as="geometry" />
+    </mxCell>
+    <mxCell id="sub_qlib" parent="frame_nosql" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;align=left;strokeWidth=1.2;labelBackgroundColor=none;" value="&lt;p style=&quot;margin:0px;margin-top:6px;text-align:center;&quot;&gt;&lt;b&gt;&amp;lt;&amp;lt;embedded&amp;gt;&amp;gt;&lt;br&gt;QLIB_FEATURES&lt;/b&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot; style=&quot;border-color:#16A34A;margin:0px;&quot;&gt;&lt;p style=&quot;margin:0px;margin-left:8px;margin-top:4px;padding-bottom:6px;font-family:monospace;font-size:11px;&quot;&gt;* feature_vector : BINARY (Alpha)&lt;/p&gt;" vertex="1">
+      <mxGeometry height="90" width="200" x="240" y="470" as="geometry" />
+    </mxCell>
+    <mxCell id="sub_master" parent="frame_nosql" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;align=left;strokeWidth=1.2;labelBackgroundColor=none;" value="&lt;p style=&quot;margin:0px;margin-top:6px;text-align:center;&quot;&gt;&lt;b&gt;&amp;lt;&amp;lt;embedded&amp;gt;&amp;gt;&lt;br&gt;MASTER_INFERENCE&lt;/b&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot; style=&quot;border-color:#16A34A;margin:0px;&quot;&gt;&lt;p style=&quot;margin:0px;margin-left:8px;margin-top:4px;padding-bottom:6px;font-family:monospace;font-size:11px;&quot;&gt;* raw_tensors : BINARY&lt;br&gt;* trend : VARCHAR(20)&lt;/p&gt;" vertex="1">
+      <mxGeometry height="90" width="180" x="30" y="620" as="geometry" />
+    </mxCell>
+    <mxCell id="sub_galformer" parent="frame_nosql" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;align=left;strokeWidth=1.2;labelBackgroundColor=none;" value="&lt;p style=&quot;margin:0px;margin-top:6px;text-align:center;&quot;&gt;&lt;b&gt;&amp;lt;&amp;lt;embedded&amp;gt;&amp;gt;&lt;br&gt;GALFORMER_INFERENCE&lt;/b&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot; style=&quot;border-color:#16A34A;margin:0px;&quot;&gt;&lt;p style=&quot;margin:0px;margin-left:8px;margin-top:4px;padding-bottom:6px;font-family:monospace;font-size:11px;&quot;&gt;* raw_tensors : BINARY&lt;br&gt;o projected_horizon : DOUBLE&lt;/p&gt;" vertex="1">
+      <mxGeometry height="90" width="200" x="240" y="620" as="geometry" />
+    </mxCell>
+    <mxCell id="sub_stat" parent="frame_nosql" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;align=left;strokeWidth=1.2;labelBackgroundColor=none;" value="&lt;p style=&quot;margin:0px;margin-top:6px;text-align:center;&quot;&gt;&lt;b&gt;&amp;lt;&amp;lt;embedded&amp;gt;&amp;gt;&lt;br&gt;STATISTICAL_VALIDATION&lt;/b&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot; style=&quot;border-color:#16A34A;margin:0px;&quot;&gt;&lt;p style=&quot;margin:0px;margin-left:8px;margin-top:4px;padding-bottom:6px;font-family:monospace;font-size:11px;&quot;&gt;* z_score : DOUBLE&lt;br&gt;* p_value : DOUBLE&lt;br&gt;* is_significant : BOOLEAN&lt;br&gt;* final_signal : VARCHAR(10)&lt;/p&gt;" vertex="1">
+      <mxGeometry height="130" width="210" x="480" y="520" as="geometry" />
+    </mxCell>
+    <mxCell id="rel_mt_raw" edge="1" parent="frame_nosql" source="doc_market_tick" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;startArrow=ERone;endArrow=ERmand;startFill=0;endFill=0;strokeWidth=1.5;fontSize=10;fontColor=default;labelBackgroundColor=none;" target="sub_raw_data" value="1:1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="360" y="420" />
+          <mxPoint x="120" y="420" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="rel_mt_qlib" edge="1" parent="frame_nosql" source="doc_market_tick" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;startArrow=ERone;endArrow=ERmand;startFill=0;endFill=0;strokeWidth=1.5;fontSize=10;fontColor=default;labelBackgroundColor=none;" target="sub_qlib" value="1:1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="400" y="440" />
+          <mxPoint x="340" y="440" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="rel_mt_master" edge="1" parent="frame_nosql" source="doc_market_tick" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;startArrow=ERone;endArrow=ERmand;startFill=0;endFill=0;strokeWidth=1.5;fontSize=10;fontColor=default;labelBackgroundColor=none;" target="sub_master" value="1:1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="340" y="400" />
+          <mxPoint x="20" y="400" />
+          <mxPoint x="20" y="665" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="rel_mt_galformer" edge="1" parent="frame_nosql" source="doc_market_tick" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;startArrow=ERone;endArrow=ERmand;startFill=0;endFill=0;strokeWidth=1.5;fontSize=10;fontColor=default;labelBackgroundColor=none;" target="sub_galformer" value="1:1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="430" y="410" />
+          <mxPoint x="430" y="665" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="rel_mt_stat" edge="1" parent="frame_nosql" source="doc_market_tick" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;startArrow=ERone;endArrow=ERmand;startFill=0;endFill=0;strokeWidth=1.5;fontSize=10;fontColor=default;labelBackgroundColor=none;" target="sub_stat" value="1:1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="520" y="440" />
+          <mxPoint x="585" y="440" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="cross_intent_user" edge="1" parent="1" source="ent_user" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;startArrow=ERzeroToOne;endArrow=ERmany;dashed=1;strokeWidth=1.5;fontSize=10;fontColor=default;labelBackgroundColor=none;" target="doc_intent_logs" value="«ref» user_id (0..1 : N)">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="170" y="70" />
+          <mxPoint x="670" y="70" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="cross_tick_asset" edge="1" parent="1" source="ent_asset" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;startArrow=ERone;endArrow=ERmany;dashed=1;strokeWidth=1.5;fontSize=10;fontColor=default;labelBackgroundColor=none;" target="doc_market_tick" value="«ref» ticker (1 : N)">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="500" y="220" />
+          <mxPoint x="620" y="220" />
+          <mxPoint x="620" y="340" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+  </root>
+</mxGraphModel>
