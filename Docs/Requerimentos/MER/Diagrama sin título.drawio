@@ -1,0 +1,175 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/29.5.2 Chrome/142.0.7444.265 Electron/39.6.1 Safari/537.36" version="29.5.2">
+  <diagram name="Página-1" id="oQnB8hg_-mFdf4dYoKLP">
+    <mxGraphModel dx="1412" dy="849" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="est" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;labelBackgroundColor=none;" value="Estudiante" vertex="1">
+          <mxGeometry height="50" width="120" x="450" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="gpo" parent="1" style="rounded=0;whiteSpace=wrap;html=1;double=1;fontStyle=1;labelBackgroundColor=none;" value="Grupo" vertex="1">
+          <mxGeometry height="50" width="120" x="450" y="450" as="geometry" />
+        </mxCell>
+        <mxCell id="prof" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;labelBackgroundColor=none;" value="Profesor" vertex="1">
+          <mxGeometry height="50" width="120" x="100" y="450" as="geometry" />
+        </mxCell>
+        <mxCell id="asig" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;labelBackgroundColor=none;" value="Asignatura" vertex="1">
+          <mxGeometry height="50" width="120" x="800" y="450" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_inscribe" parent="1" style="rhombus;whiteSpace=wrap;html=1;fontStyle=1;labelBackgroundColor=none;" value="Inscribe" vertex="1">
+          <mxGeometry height="70" width="120" x="450" y="250" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_imparte" parent="1" style="rhombus;whiteSpace=wrap;html=1;fontStyle=1;labelBackgroundColor=none;" value="Imparte" vertex="1">
+          <mxGeometry height="70" width="110" x="280" y="440" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_tiene" parent="1" style="rhombus;whiteSpace=wrap;html=1;double=1;fontStyle=1;labelBackgroundColor=none;" value="Tiene" vertex="1">
+          <mxGeometry height="70" width="110" x="620" y="440" as="geometry" />
+        </mxCell>
+        <mxCell id="a_e1" parent="1" style="ellipse;whiteSpace=wrap;html=1;labelBackgroundColor=none;" value="&lt;u&gt;codigo&lt;/u&gt;" vertex="1">
+          <mxGeometry height="40" width="90" x="280" y="50" as="geometry" />
+        </mxCell>
+        <mxCell id="a_e2" parent="1" style="ellipse;whiteSpace=wrap;html=1;labelBackgroundColor=none;" value="nombre" vertex="1">
+          <mxGeometry height="40" width="90" x="380" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="a_e3" parent="1" style="ellipse;whiteSpace=wrap;html=1;labelBackgroundColor=none;" value="dir" vertex="1">
+          <mxGeometry height="40" width="90" x="490" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="a_e4" parent="1" style="ellipse;whiteSpace=wrap;html=1;labelBackgroundColor=none;" value="edad" vertex="1">
+          <mxGeometry height="40" width="90" x="600" y="50" as="geometry" />
+        </mxCell>
+        <mxCell id="a_e5" parent="1" style="ellipse;whiteSpace=wrap;html=1;labelBackgroundColor=none;" value="dir_electronica" vertex="1">
+          <mxGeometry height="40" width="100" x="640" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="a_e6" parent="1" style="ellipse;shape=doubleEllipse;whiteSpace=wrap;html=1;labelBackgroundColor=none;" value="telefonos" vertex="1">
+          <mxGeometry height="40" width="90" x="280" y="120" as="geometry" />
+        </mxCell>
+        <mxCell id="a_i1" parent="1" style="ellipse;whiteSpace=wrap;html=1;labelBackgroundColor=none;" value="corte_1" vertex="1">
+          <mxGeometry height="40" width="80" x="630" y="190" as="geometry" />
+        </mxCell>
+        <mxCell id="a_i2" parent="1" style="ellipse;whiteSpace=wrap;html=1;labelBackgroundColor=none;" value="corte_2" vertex="1">
+          <mxGeometry height="40" width="80" x="670" y="265" as="geometry" />
+        </mxCell>
+        <mxCell id="a_i3" parent="1" style="ellipse;whiteSpace=wrap;html=1;labelBackgroundColor=none;" value="examen_final" vertex="1">
+          <mxGeometry height="40" width="90" x="640" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="a_i4" parent="1" style="ellipse;whiteSpace=wrap;html=1;dashed=1;labelBackgroundColor=none;" value="definitiva" vertex="1">
+          <mxGeometry height="40" width="80" x="770" y="200" as="geometry" />
+        </mxCell>
+        <mxCell id="a_g1" parent="1" style="ellipse;whiteSpace=wrap;html=1;labelBackgroundColor=none;" value="&lt;span style=&quot;border-bottom: 1px dashed;&quot;&gt;id_grupo&lt;/span&gt;" vertex="1">
+          <mxGeometry height="40" width="90" x="360" y="550" as="geometry" />
+        </mxCell>
+        <mxCell id="a_g2" parent="1" style="ellipse;whiteSpace=wrap;html=1;labelBackgroundColor=none;" value="horario" vertex="1">
+          <mxGeometry height="40" width="90" x="465" y="560" as="geometry" />
+        </mxCell>
+        <mxCell id="a_g3" parent="1" style="ellipse;whiteSpace=wrap;html=1;labelBackgroundColor=none;" value="salon" vertex="1">
+          <mxGeometry height="40" width="90" x="570" y="540" as="geometry" />
+        </mxCell>
+        <mxCell id="a_p1" parent="1" style="ellipse;whiteSpace=wrap;html=1;labelBackgroundColor=none;" value="&lt;u&gt;id_profesor&lt;/u&gt;" vertex="1">
+          <mxGeometry height="40" width="90" x="10" y="380" as="geometry" />
+        </mxCell>
+        <mxCell id="a_p2" parent="1" style="ellipse;whiteSpace=wrap;html=1;labelBackgroundColor=none;" value="nombre" vertex="1">
+          <mxGeometry height="40" width="90" x="115" y="360" as="geometry" />
+        </mxCell>
+        <mxCell id="a_p3" parent="1" style="ellipse;whiteSpace=wrap;html=1;labelBackgroundColor=none;" value="especialidad" vertex="1">
+          <mxGeometry height="40" width="90" x="10" y="530" as="geometry" />
+        </mxCell>
+        <mxCell id="a_p4" parent="1" style="ellipse;whiteSpace=wrap;html=1;labelBackgroundColor=none;" value="escolaridad" vertex="1">
+          <mxGeometry height="40" width="90" x="115" y="540" as="geometry" />
+        </mxCell>
+        <mxCell id="a_a1" parent="1" style="ellipse;whiteSpace=wrap;html=1;labelBackgroundColor=none;" value="&lt;u&gt;codigo&lt;/u&gt;" vertex="1">
+          <mxGeometry height="40" width="90" x="780" y="370" as="geometry" />
+        </mxCell>
+        <mxCell id="a_a2" parent="1" style="ellipse;whiteSpace=wrap;html=1;labelBackgroundColor=none;" value="nombre" vertex="1">
+          <mxGeometry height="40" width="90" x="900" y="390" as="geometry" />
+        </mxCell>
+        <mxCell id="a_a3" parent="1" style="ellipse;whiteSpace=wrap;html=1;labelBackgroundColor=none;" value="creditos" vertex="1">
+          <mxGeometry height="40" width="90" x="930" y="455" as="geometry" />
+        </mxCell>
+        <mxCell id="a_a4" parent="1" style="ellipse;whiteSpace=wrap;html=1;labelBackgroundColor=none;" value="intensidad" vertex="1">
+          <mxGeometry height="40" width="90" x="870" y="520" as="geometry" />
+        </mxCell>
+        <mxCell id="c_r1" edge="1" parent="1" source="est" style="endArrow=none;html=1;strokeWidth=2;verticalAlign=bottom;labelBackgroundColor=none;fontColor=default;" target="rel_inscribe" value="M">
+          <mxGeometry height="50" relative="1" width="50" as="geometry" />
+        </mxCell>
+        <mxCell id="c_r2" edge="1" parent="1" source="rel_inscribe" style="endArrow=none;html=1;strokeWidth=2;verticalAlign=bottom;labelBackgroundColor=none;fontColor=default;" target="gpo" value="N">
+          <mxGeometry height="50" relative="1" width="50" as="geometry" />
+        </mxCell>
+        <mxCell id="c_r3" edge="1" parent="1" source="prof" style="endArrow=none;html=1;strokeWidth=2;verticalAlign=bottom;labelBackgroundColor=none;fontColor=default;" target="rel_imparte" value="N">
+          <mxGeometry height="50" relative="1" width="50" as="geometry" />
+        </mxCell>
+        <mxCell id="c_r4" edge="1" parent="1" source="rel_imparte" style="endArrow=none;html=1;strokeWidth=2;verticalAlign=bottom;labelBackgroundColor=none;fontColor=default;" target="gpo" value="N">
+          <mxGeometry height="50" relative="1" width="50" as="geometry" />
+        </mxCell>
+        <mxCell id="c_r5" edge="1" parent="1" source="asig" style="endArrow=none;html=1;strokeWidth=2;verticalAlign=bottom;labelBackgroundColor=none;fontColor=default;startArrow=classic;startFill=1;" target="rel_tiene" value="1">
+          <mxGeometry height="50" relative="1" width="50" as="geometry" />
+        </mxCell>
+        <mxCell id="c_r6" edge="1" parent="1" source="rel_tiene" style="endArrow=none;html=1;strokeWidth=2;verticalAlign=bottom;labelBackgroundColor=none;double=1;fontColor=default;" target="gpo" value="N">
+          <mxGeometry height="50" relative="1" width="50" as="geometry" />
+        </mxCell>
+        <mxCell id="ca_e1" edge="1" parent="1" source="a_e1" style="endArrow=none;html=1;labelBackgroundColor=none;fontColor=default;" target="est">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ca_e2" edge="1" parent="1" source="a_e2" style="endArrow=none;html=1;labelBackgroundColor=none;fontColor=default;" target="est">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ca_e3" edge="1" parent="1" source="a_e3" style="endArrow=none;html=1;labelBackgroundColor=none;fontColor=default;" target="est">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ca_e4" edge="1" parent="1" source="a_e4" style="endArrow=none;html=1;labelBackgroundColor=none;fontColor=default;" target="est">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ca_e5" edge="1" parent="1" source="a_e5" style="endArrow=none;html=1;labelBackgroundColor=none;fontColor=default;" target="est">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ca_e6" edge="1" parent="1" source="a_e6" style="endArrow=none;html=1;labelBackgroundColor=none;fontColor=default;" target="est">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ca_i1" edge="1" parent="1" source="a_i1" style="endArrow=none;html=1;labelBackgroundColor=none;fontColor=default;" target="rel_inscribe">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ca_i2" edge="1" parent="1" source="a_i2" style="endArrow=none;html=1;labelBackgroundColor=none;fontColor=default;" target="rel_inscribe">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ca_i3" edge="1" parent="1" source="a_i3" style="endArrow=none;html=1;labelBackgroundColor=none;fontColor=default;" target="rel_inscribe">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ca_i4" edge="1" parent="1" source="a_i4" style="endArrow=none;html=1;labelBackgroundColor=none;fontColor=default;" target="rel_inscribe">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ca_g1" edge="1" parent="1" source="a_g1" style="endArrow=none;html=1;labelBackgroundColor=none;fontColor=default;" target="gpo">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ca_g2" edge="1" parent="1" source="a_g2" style="endArrow=none;html=1;labelBackgroundColor=none;fontColor=default;" target="gpo">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ca_g3" edge="1" parent="1" source="a_g3" style="endArrow=none;html=1;labelBackgroundColor=none;fontColor=default;" target="gpo">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ca_p1" edge="1" parent="1" source="a_p1" style="endArrow=none;html=1;labelBackgroundColor=none;fontColor=default;" target="prof">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ca_p2" edge="1" parent="1" source="a_p2" style="endArrow=none;html=1;labelBackgroundColor=none;fontColor=default;" target="prof">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ca_p3" edge="1" parent="1" source="a_p3" style="endArrow=none;html=1;labelBackgroundColor=none;fontColor=default;" target="prof">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ca_p4" edge="1" parent="1" source="a_p4" style="endArrow=none;html=1;labelBackgroundColor=none;fontColor=default;" target="prof">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ca_a1" edge="1" parent="1" source="a_a1" style="endArrow=none;html=1;labelBackgroundColor=none;fontColor=default;" target="asig">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ca_a2" edge="1" parent="1" source="a_a2" style="endArrow=none;html=1;labelBackgroundColor=none;fontColor=default;" target="asig">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ca_a3" edge="1" parent="1" source="a_a3" style="endArrow=none;html=1;labelBackgroundColor=none;fontColor=default;" target="asig">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ca_a4" edge="1" parent="1" source="a_a4" style="endArrow=none;html=1;labelBackgroundColor=none;fontColor=default;" target="asig">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
