@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends
 from ...data_providers.schemas import FinnhubSchema as FS
 
 # API Key extraída de las variables de entorno (.env)
-FINNHUB_API_KEY = os.getenv("FINNHUB_API_KEY", "")
+FINNHUB_API_KEY = os.getenv("FINNHUB_APIKEY", "")
 __BASE_URL = "https://api.finnhub.io/api/v1"
 
 finnhub_client = finnhub.Client(api_key=FINNHUB_API_KEY)

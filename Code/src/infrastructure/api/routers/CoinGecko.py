@@ -9,9 +9,12 @@ from ...data_providers.schemas import CoinGeckoSchemas as CG
 # Configuración y Autenticación CoinGecko API v3
 # ==============================================================================
 
-# TODO: Colocar la API KEY extraida de .env. Crear en .env example
-COINGECKO_API_KEY = os.getenv("COINGECKO_API_KEY", "")
-COINGECKO_IS_PRO = os.getenv("COINGECKO_IS_PRO", "false").lower() in ("true", "1", "yes")
+COINGECKO_API_KEY = os.getenv("COINGECKO_APIKEY", "")
+COINGECKO_IS_PRO = os.getenv("COINGECKO_IS_PRO", "false").lower() in (
+    "true",
+    "1",
+    "yes",
+)
 
 __BASE_URL = (
     "https://pro-api.coingecko.com/api/v3"
@@ -41,6 +44,7 @@ def _get_headers() -> Dict[str, str]:
 # ==============================================================================
 # 1. Simple Price - GET /api/v3/simple/price
 # ==============================================================================
+
 
 def simple_price(p: CG.SimplePriceParams) -> Optional[CG.SimplePriceResponse]:
     """
@@ -77,6 +81,7 @@ def simple_price(p: CG.SimplePriceParams) -> Optional[CG.SimplePriceResponse]:
 # ==============================================================================
 # 2. Coins Markets - GET /api/v3/coins/markets
 # ==============================================================================
+
 
 def coins_markets(p: CG.CoinMarketsParams) -> Optional[List[CG.CoinMarketItem]]:
     """
@@ -115,6 +120,7 @@ def coins_markets(p: CG.CoinMarketsParams) -> Optional[List[CG.CoinMarketItem]]:
 # 3. Market Chart (Historical Time Series) - GET /api/v3/coins/{id}/market_chart
 # ==============================================================================
 
+
 def market_chart(p: CG.MarketChartParams) -> Optional[CG.MarketChartResponse]:
     """
     Endpoint: GET /coins/{id}/market_chart
@@ -146,6 +152,7 @@ def market_chart(p: CG.MarketChartParams) -> Optional[CG.MarketChartResponse]:
 # ==============================================================================
 # 4. OHLC Candlestick Series - GET /api/v3/coins/{id}/ohlc
 # ==============================================================================
+
 
 def coin_ohlc(p: CG.CoinOHLCParams) -> Optional[List[CG.CoinOHLCCandle]]:
     """
@@ -186,6 +193,7 @@ def coin_ohlc(p: CG.CoinOHLCParams) -> Optional[List[CG.CoinOHLCCandle]]:
 # 5. Global Market Data (Crypto Macro Context) - GET /api/v3/global
 # ==============================================================================
 
+
 def global_market() -> Optional[CG.GlobalMarketResponse]:
     """
     Endpoint: GET /global
@@ -211,23 +219,32 @@ def global_market() -> Optional[CG.GlobalMarketResponse]:
 # FastAPI Router Endpoints
 # ==============================================================================
 
+
 @router.get("/simple/price", response_model=Optional[CG.SimplePriceResponse])
-def get_simple_price(p: CG.SimplePriceParams = Depends()) -> Optional[CG.SimplePriceResponse]:
+def get_simple_price(
+    p: CG.SimplePriceParams = Depends(),
+) -> Optional[CG.SimplePriceResponse]:
     return simple_price(p)
 
 
 @router.get("/coins/markets", response_model=Optional[List[CG.CoinMarketItem]])
-def get_coins_markets(p: CG.CoinMarketsParams = Depends()) -> Optional[List[CG.CoinMarketItem]]:
+def get_coins_markets(
+    p: CG.CoinMarketsParams = Depends(),
+) -> Optional[List[CG.CoinMarketItem]]:
     return coins_markets(p)
 
 
 @router.get("/coins/{id}/market_chart", response_model=Optional[CG.MarketChartResponse])
-def get_market_chart(p: CG.MarketChartParams = Depends()) -> Optional[CG.MarketChartResponse]:
+def get_market_chart(
+    p: CG.MarketChartParams = Depends(),
+) -> Optional[CG.MarketChartResponse]:
     return market_chart(p)
 
 
 @router.get("/coins/{id}/ohlc", response_model=Optional[List[CG.CoinOHLCCandle]])
-def get_coin_ohlc(p: CG.CoinOHLCParams = Depends()) -> Optional[List[CG.CoinOHLCCandle]]:
+def get_coin_ohlc(
+    p: CG.CoinOHLCParams = Depends(),
+) -> Optional[List[CG.CoinOHLCCandle]]:
     return coin_ohlc(p)
 
 

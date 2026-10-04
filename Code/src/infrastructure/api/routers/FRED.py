@@ -10,7 +10,7 @@ from ...data_providers.schemas import FREDSchemas as FRED
 # ==============================================================================
 
 # TODO: Colocar la API KEY extraida de .env. Crear en .env example
-FRED_API_KEY = os.getenv("FRED_API_KEY", "")
+FRED_API_KEY = os.getenv("FRED_APIKEY", "")
 __BASE_URL = "https://api.stlouisfed.org/fred"
 
 router = APIRouter(prefix="/fred", tags=["FRED"])
@@ -34,7 +34,10 @@ def _add_fred_params(params: Optional[dict] = None) -> dict:
 # 1. Series Observations - GET /fred/series/observations
 # ==============================================================================
 
-def series_observations(p: FRED.FREDObservationsParams) -> Optional[FRED.FREDObservationsResponse]:
+
+def series_observations(
+    p: FRED.FREDObservationsParams,
+) -> Optional[FRED.FREDObservationsResponse]:
     """
     Endpoint: GET /fred/series/observations
     Obtiene observaciones históricas de series macroeconómicas (GDP, CPI, UNRATE, DGS10, VIX, etc.).
@@ -52,7 +55,9 @@ def series_observations(p: FRED.FREDObservationsParams) -> Optional[FRED.FREDObs
             "frequency": p.frequency,
         }
         with httpx.Client(timeout=15.0) as client:
-            response = client.get(url, headers=_get_headers(), params=_add_fred_params(query_params))
+            response = client.get(
+                url, headers=_get_headers(), params=_add_fred_params(query_params)
+            )
             response.raise_for_status()
             raw = response.json()
 
@@ -68,6 +73,7 @@ def series_observations(p: FRED.FREDObservationsParams) -> Optional[FRED.FREDObs
 # 2. Series Metadata - GET /fred/series
 # ==============================================================================
 
+
 def series_metadata(p: FRED.FREDSeriesParams) -> Optional[FRED.FREDSeriesResponse]:
     """
     Endpoint: GET /fred/series
@@ -79,7 +85,9 @@ def series_metadata(p: FRED.FREDSeriesParams) -> Optional[FRED.FREDSeriesRespons
             "series_id": p.series_id,
         }
         with httpx.Client(timeout=15.0) as client:
-            response = client.get(url, headers=_get_headers(), params=_add_fred_params(query_params))
+            response = client.get(
+                url, headers=_get_headers(), params=_add_fred_params(query_params)
+            )
             response.raise_for_status()
             raw = response.json()
 
@@ -95,11 +103,18 @@ def series_metadata(p: FRED.FREDSeriesParams) -> Optional[FRED.FREDSeriesRespons
 # FastAPI Router Endpoints
 # ==============================================================================
 
-@router.get("/series/observations", response_model=Optional[FRED.FREDObservationsResponse])
-def get_series_observations(p: FRED.FREDObservationsParams = Depends()) -> Optional[FRED.FREDObservationsResponse]:
+
+@router.get(
+    "/series/observations", response_model=Optional[FRED.FREDObservationsResponse]
+)
+def get_series_observations(
+    p: FRED.FREDObservationsParams = Depends(),
+) -> Optional[FRED.FREDObservationsResponse]:
     return series_observations(p)
 
 
 @router.get("/series", response_model=Optional[FRED.FREDSeriesResponse])
-def get_series_metadata(p: FRED.FREDSeriesParams = Depends()) -> Optional[FRED.FREDSeriesResponse]:
+def get_series_metadata(
+    p: FRED.FREDSeriesParams = Depends(),
+) -> Optional[FRED.FREDSeriesResponse]:
     return series_metadata(p)

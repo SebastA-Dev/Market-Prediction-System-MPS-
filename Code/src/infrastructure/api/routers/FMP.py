@@ -10,7 +10,7 @@ from ...data_providers.schemas import FMPSchemas as FMP
 # ==============================================================================
 
 # TODO: Colocar la API KEY extraida de .env. Crear en .env example
-FMP_API_KEY = os.getenv("FMP_API_KEY", "")
+FMP_API_KEY = os.getenv("FMP_APIKEY", "")
 __BASE_URL = "https://financialmodelingprep.com"
 
 router = APIRouter(prefix="/fmp", tags=["FMP"])
@@ -33,6 +33,7 @@ def _add_apikey(params: Optional[dict] = None) -> dict:
 # 1. Macro & Sectoral Endpoints
 # ==============================================================================
 
+
 def sector_performance() -> Optional[List[FMP.SectorPerformanceItem]]:
     """
     Endpoint: GET /api/v3/sector-performance
@@ -52,7 +53,9 @@ def sector_performance() -> Optional[List[FMP.SectorPerformanceItem]]:
         return None
 
 
-def historical_sector_performance(limit: int = 50) -> Optional[List[FMP.HistoricalSectorPerformanceItem]]:
+def historical_sector_performance(
+    limit: int = 50,
+) -> Optional[List[FMP.HistoricalSectorPerformanceItem]]:
     """
     Endpoint: GET /api/v3/historical-sectors-performance
     Rendimiento histórico diario desagregado por sectores.
@@ -60,13 +63,17 @@ def historical_sector_performance(limit: int = 50) -> Optional[List[FMP.Historic
     try:
         url = f"{__BASE_URL}/api/v3/historical-sectors-performance"
         with httpx.Client(timeout=15.0) as client:
-            response = client.get(url, headers=_get_headers(), params=_add_apikey({"limit": limit}))
+            response = client.get(
+                url, headers=_get_headers(), params=_add_apikey({"limit": limit})
+            )
             response.raise_for_status()
             raw = response.json()
 
         if not isinstance(raw, list):
             return None
-        return [FMP.HistoricalSectorPerformanceItem.model_validate(item) for item in raw]
+        return [
+            FMP.HistoricalSectorPerformanceItem.model_validate(item) for item in raw
+        ]
     except (ValidationError, httpx.HTTPError, Exception):
         return None
 
@@ -83,7 +90,9 @@ def treasury_rates(p: FMP.TreasuryRatesParams) -> Optional[List[FMP.TreasuryRate
             "to": p.to_date,
         }
         with httpx.Client(timeout=15.0) as client:
-            response = client.get(url, headers=_get_headers(), params=_add_apikey(query_params))
+            response = client.get(
+                url, headers=_get_headers(), params=_add_apikey(query_params)
+            )
             response.raise_for_status()
             raw = response.json()
 
@@ -94,7 +103,9 @@ def treasury_rates(p: FMP.TreasuryRatesParams) -> Optional[List[FMP.TreasuryRate
         return None
 
 
-def company_screener(p: FMP.CompanyScreenerParams) -> Optional[List[FMP.CompanyScreenerItem]]:
+def company_screener(
+    p: FMP.CompanyScreenerParams,
+) -> Optional[List[FMP.CompanyScreenerItem]]:
     """
     Endpoint: GET /api/v3/stock-screener
     Filtro cuantitativo de empresas por sector, industria, capitalización y beta.
@@ -111,7 +122,9 @@ def company_screener(p: FMP.CompanyScreenerParams) -> Optional[List[FMP.CompanyS
             "limit": p.limit,
         }
         with httpx.Client(timeout=15.0) as client:
-            response = client.get(url, headers=_get_headers(), params=_add_apikey(query_params))
+            response = client.get(
+                url, headers=_get_headers(), params=_add_apikey(query_params)
+            )
             response.raise_for_status()
             raw = response.json()
 
@@ -125,6 +138,7 @@ def company_screener(p: FMP.CompanyScreenerParams) -> Optional[List[FMP.CompanyS
 # ==============================================================================
 # 2. Company Fundamentals & Valuation
 # ==============================================================================
+
 
 def company_profile(p: FMP.SymbolParam) -> Optional[List[FMP.CompanyProfileItem]]:
     """
@@ -183,7 +197,9 @@ def key_metrics_ttm(p: FMP.SymbolParam) -> Optional[List[FMP.KeyMetricsTTMItem]]
         return None
 
 
-def price_target_consensus(p: FMP.SymbolParam) -> Optional[List[FMP.PriceTargetConsensusItem]]:
+def price_target_consensus(
+    p: FMP.SymbolParam,
+) -> Optional[List[FMP.PriceTargetConsensusItem]]:
     """
     Endpoint: GET /api/v4/price-target-consensus
     Consenso de precios objetivo de analistas (high, low, median, consensus).
@@ -191,7 +207,9 @@ def price_target_consensus(p: FMP.SymbolParam) -> Optional[List[FMP.PriceTargetC
     try:
         url = f"{__BASE_URL}/api/v4/price-target-consensus"
         with httpx.Client(timeout=15.0) as client:
-            response = client.get(url, headers=_get_headers(), params=_add_apikey({"symbol": p.symbol}))
+            response = client.get(
+                url, headers=_get_headers(), params=_add_apikey({"symbol": p.symbol})
+            )
             response.raise_for_status()
             raw = response.json()
 
@@ -206,7 +224,10 @@ def price_target_consensus(p: FMP.SymbolParam) -> Optional[List[FMP.PriceTargetC
 # 3. Time Series & OHLCV Data
 # ==============================================================================
 
-def historical_price_full(p: FMP.HistoricalPriceFullParams) -> Optional[FMP.HistoricalPriceFullResponse]:
+
+def historical_price_full(
+    p: FMP.HistoricalPriceFullParams,
+) -> Optional[FMP.HistoricalPriceFullResponse]:
     """
     Endpoint: GET /api/v3/historical-price-full/{symbol}
     Serie de tiempo histórica diaria completa con precios ajustados y volumen para Galformer.
@@ -218,7 +239,9 @@ def historical_price_full(p: FMP.HistoricalPriceFullParams) -> Optional[FMP.Hist
             "to": p.to_date,
         }
         with httpx.Client(timeout=20.0) as client:
-            response = client.get(url, headers=_get_headers(), params=_add_apikey(query_params))
+            response = client.get(
+                url, headers=_get_headers(), params=_add_apikey(query_params)
+            )
             response.raise_for_status()
             raw = response.json()
 
@@ -233,46 +256,73 @@ def historical_price_full(p: FMP.HistoricalPriceFullParams) -> Optional[FMP.Hist
 # FastAPI Router Endpoints
 # ==============================================================================
 
-@router.get("/sector-performance", response_model=Optional[List[FMP.SectorPerformanceItem]])
+
+@router.get(
+    "/sector-performance", response_model=Optional[List[FMP.SectorPerformanceItem]]
+)
 def get_sector_performance() -> Optional[List[FMP.SectorPerformanceItem]]:
     return sector_performance()
 
 
-@router.get("/historical-sectors-performance", response_model=Optional[List[FMP.HistoricalSectorPerformanceItem]])
-def get_historical_sectors_performance(limit: int = Query(50, ge=1, le=500)) -> Optional[List[FMP.HistoricalSectorPerformanceItem]]:
+@router.get(
+    "/historical-sectors-performance",
+    response_model=Optional[List[FMP.HistoricalSectorPerformanceItem]],
+)
+def get_historical_sectors_performance(
+    limit: int = Query(50, ge=1, le=500)
+) -> Optional[List[FMP.HistoricalSectorPerformanceItem]]:
     return historical_sector_performance(limit=limit)
 
 
 @router.get("/treasury", response_model=Optional[List[FMP.TreasuryRatesItem]])
-def get_treasury_rates(p: FMP.TreasuryRatesParams = Depends()) -> Optional[List[FMP.TreasuryRatesItem]]:
+def get_treasury_rates(
+    p: FMP.TreasuryRatesParams = Depends(),
+) -> Optional[List[FMP.TreasuryRatesItem]]:
     return treasury_rates(p)
 
 
 @router.get("/stock-screener", response_model=Optional[List[FMP.CompanyScreenerItem]])
-def get_company_screener(p: FMP.CompanyScreenerParams = Depends()) -> Optional[List[FMP.CompanyScreenerItem]]:
+def get_company_screener(
+    p: FMP.CompanyScreenerParams = Depends(),
+) -> Optional[List[FMP.CompanyScreenerItem]]:
     return company_screener(p)
 
 
 @router.get("/profile", response_model=Optional[List[FMP.CompanyProfileItem]])
-def get_company_profile(p: FMP.SymbolParam = Depends()) -> Optional[List[FMP.CompanyProfileItem]]:
+def get_company_profile(
+    p: FMP.SymbolParam = Depends(),
+) -> Optional[List[FMP.CompanyProfileItem]]:
     return company_profile(p)
 
 
 @router.get("/ratios-ttm", response_model=Optional[List[FMP.FinancialRatiosTTMItem]])
-def get_ratios_ttm(p: FMP.SymbolParam = Depends()) -> Optional[List[FMP.FinancialRatiosTTMItem]]:
+def get_ratios_ttm(
+    p: FMP.SymbolParam = Depends(),
+) -> Optional[List[FMP.FinancialRatiosTTMItem]]:
     return ratios_ttm(p)
 
 
 @router.get("/key-metrics-ttm", response_model=Optional[List[FMP.KeyMetricsTTMItem]])
-def get_key_metrics_ttm(p: FMP.SymbolParam = Depends()) -> Optional[List[FMP.KeyMetricsTTMItem]]:
+def get_key_metrics_ttm(
+    p: FMP.SymbolParam = Depends(),
+) -> Optional[List[FMP.KeyMetricsTTMItem]]:
     return key_metrics_ttm(p)
 
 
-@router.get("/price-target-consensus", response_model=Optional[List[FMP.PriceTargetConsensusItem]])
-def get_price_target_consensus(p: FMP.SymbolParam = Depends()) -> Optional[List[FMP.PriceTargetConsensusItem]]:
+@router.get(
+    "/price-target-consensus",
+    response_model=Optional[List[FMP.PriceTargetConsensusItem]],
+)
+def get_price_target_consensus(
+    p: FMP.SymbolParam = Depends(),
+) -> Optional[List[FMP.PriceTargetConsensusItem]]:
     return price_target_consensus(p)
 
 
-@router.get("/historical-price-full", response_model=Optional[FMP.HistoricalPriceFullResponse])
-def get_historical_price_full(p: FMP.HistoricalPriceFullParams = Depends()) -> Optional[FMP.HistoricalPriceFullResponse]:
+@router.get(
+    "/historical-price-full", response_model=Optional[FMP.HistoricalPriceFullResponse]
+)
+def get_historical_price_full(
+    p: FMP.HistoricalPriceFullParams = Depends(),
+) -> Optional[FMP.HistoricalPriceFullResponse]:
     return historical_price_full(p)

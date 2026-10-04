@@ -10,7 +10,7 @@ from ...data_providers.schemas import PolygonSchemas as PG
 # ==============================================================================
 
 # TODO: Colocar la API KEY extraida de .env. Crear en .env example
-POLYGON_API_KEY = os.getenv("POLYGON_API_KEY", "")
+POLYGON_API_KEY = os.getenv("POLYGON_APIKEY", "")
 __BASE_URL = "https://api.polygon.io"
 
 router = APIRouter(prefix="/polygon", tags=["Polygon"])
@@ -31,6 +31,7 @@ def _get_headers() -> Dict[str, str]:
 # ==============================================================================
 # 1. Aggregates (Bars / OHLCV) - GET /v2/aggs/ticker/...
 # ==============================================================================
+
 
 def aggregates(p: PG.AggregatesParams) -> Optional[PG.AggregatesResponse]:
     """
@@ -66,6 +67,7 @@ def aggregates(p: PG.AggregatesParams) -> Optional[PG.AggregatesResponse]:
 # 2. Grouped Daily (Full Market Snapshot) - GET /v2/aggs/grouped/locale/us/market/stocks/{date}
 # ==============================================================================
 
+
 def grouped_daily(p: PG.GroupedDailyParams) -> Optional[PG.GroupedDailyResponse]:
     """
     Endpoint: GET /v2/aggs/grouped/locale/us/market/stocks/{date}
@@ -92,6 +94,7 @@ def grouped_daily(p: PG.GroupedDailyParams) -> Optional[PG.GroupedDailyResponse]
 # ==============================================================================
 # 3. Daily Open / Close - GET /v1/open-close/{ticker}/{date}
 # ==============================================================================
+
 
 def daily_open_close(p: PG.DailyOpenCloseParams) -> Optional[PG.DailyOpenCloseResponse]:
     """
@@ -120,6 +123,7 @@ def daily_open_close(p: PG.DailyOpenCloseParams) -> Optional[PG.DailyOpenCloseRe
 # 4. Ticker Details v3 - GET /v3/reference/tickers/{ticker}
 # ==============================================================================
 
+
 def ticker_details(p: PG.TickerDetailsParams) -> Optional[PG.TickerDetailsResponse]:
     """
     Endpoint: GET /v3/reference/tickers/{ticker}
@@ -146,6 +150,7 @@ def ticker_details(p: PG.TickerDetailsParams) -> Optional[PG.TickerDetailsRespon
 # 5. Market Status - GET /v1/marketstatus/now
 # ==============================================================================
 
+
 def market_status() -> Optional[PG.PolygonMarketStatusResponse]:
     """
     Endpoint: GET /v1/marketstatus/now
@@ -170,23 +175,32 @@ def market_status() -> Optional[PG.PolygonMarketStatusResponse]:
 # FastAPI Router Endpoints
 # ==============================================================================
 
+
 @router.get("/aggs", response_model=Optional[PG.AggregatesResponse])
-def get_aggregates(p: PG.AggregatesParams = Depends()) -> Optional[PG.AggregatesResponse]:
+def get_aggregates(
+    p: PG.AggregatesParams = Depends(),
+) -> Optional[PG.AggregatesResponse]:
     return aggregates(p)
 
 
 @router.get("/grouped-daily", response_model=Optional[PG.GroupedDailyResponse])
-def get_grouped_daily(p: PG.GroupedDailyParams = Depends()) -> Optional[PG.GroupedDailyResponse]:
+def get_grouped_daily(
+    p: PG.GroupedDailyParams = Depends(),
+) -> Optional[PG.GroupedDailyResponse]:
     return grouped_daily(p)
 
 
 @router.get("/open-close", response_model=Optional[PG.DailyOpenCloseResponse])
-def get_daily_open_close(p: PG.DailyOpenCloseParams = Depends()) -> Optional[PG.DailyOpenCloseResponse]:
+def get_daily_open_close(
+    p: PG.DailyOpenCloseParams = Depends(),
+) -> Optional[PG.DailyOpenCloseResponse]:
     return daily_open_close(p)
 
 
 @router.get("/ticker-details", response_model=Optional[PG.TickerDetailsResponse])
-def get_ticker_details(p: PG.TickerDetailsParams = Depends()) -> Optional[PG.TickerDetailsResponse]:
+def get_ticker_details(
+    p: PG.TickerDetailsParams = Depends(),
+) -> Optional[PG.TickerDetailsResponse]:
     return ticker_details(p)
 
 
