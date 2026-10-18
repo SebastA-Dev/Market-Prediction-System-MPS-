@@ -9,7 +9,7 @@ from ...data_providers.schemas import PolygonSchemas as PG
 # Configuración y Autenticación Polygon.io API
 # ==============================================================================
 
-# TODO: Colocar la API KEY extraida de .env. Crear en .env example
+# TODO : No funciona
 POLYGON_API_KEY = os.getenv("POLYGON_APIKEY", "")
 __BASE_URL = "https://api.polygon.io"
 

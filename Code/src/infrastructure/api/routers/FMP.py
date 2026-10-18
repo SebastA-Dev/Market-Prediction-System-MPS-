@@ -9,7 +9,8 @@ from ...data_providers.schemas import FMPSchemas as FMP
 # Configuración y Autenticación Financial Modeling Prep (FMP)
 # ==============================================================================
 
-# TODO: Colocar la API KEY extraida de .env. Crear en .env example
+# TODO: No funciona
+
 FMP_API_KEY = os.getenv("FMP_APIKEY", "")
 __BASE_URL = "https://financialmodelingprep.com"
 

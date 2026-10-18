@@ -1,16 +1,52 @@
+import logging
 import os
-from typing import List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
+import httpx
 from pydantic import ValidationError
-import finnhub
 from fastapi import APIRouter, Depends
+
 from ...data_providers.schemas import FinnhubSchema as FS
 
-# API Key extraída de las variables de entorno (.env)
-FINNHUB_API_KEY = os.getenv("FINNHUB_APIKEY", "")
+from dotenv import load_dotenv
+
+load_dotenv()
+
+logger = logging.getLogger(__name__)
+
+# ==============================================================================
+# Configuración y Autenticación Finnhub API
+# ==============================================================================
+
 __BASE_URL = "https://api.finnhub.io/api/v1"
 
-finnhub_client = finnhub.Client(api_key=FINNHUB_API_KEY)
 router = APIRouter(prefix="/finnhub", tags=["Finnhub"])
+
+
+def _get_api_key() -> str:
+    """Obtiene la clave de Finnhub desde las variables de entorno."""
+    return os.getenv("FINNHUB_APIKEY", "").strip()
+
+
+def _get_headers() -> Dict[str, str]:
+    """Retorna las cabeceras estándar para peticiones HTTP a Finnhub."""
+    headers = {"accept": "application/json"}
+    key = _get_api_key()
+    if key:
+        headers["X-Finnhub-Token"] = key
+    return headers
+
+
+def _build_params(extra_params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """Construye los query params incluyendo token si está disponible."""
+    params: Dict[str, Any] = {}
+    key = _get_api_key()
+    if key:
+        params["token"] = key
+    if extra_params:
+        for k, v in extra_params.items():
+            if v is not None:
+                params[k] = v
+    return params
 
 
 # ==============================================================================
@@ -21,14 +57,21 @@ router = APIRouter(prefix="/finnhub", tags=["Finnhub"])
 def symbol_lookup_params(p: FS.SymbolLookupParams) -> Optional[FS.SymbolLookupResponse]:
     """Busca símbolos y empresas por término de búsqueda y filtro opcional de exchange."""
     try:
+        url = f"{__BASE_URL}/search"
+        extra: Dict[str, Any] = {"q": p.q}
         if p.exchange:
-            raw = finnhub_client._get(
-                "/search", params={"q": p.q, "exchange": p.exchange}
+            extra["exchange"] = p.exchange
+
+        with httpx.Client(timeout=20.0, follow_redirects=True) as client:
+            response = client.get(
+                url, headers=_get_headers(), params=_build_params(extra)
             )
-        else:
-            raw = finnhub_client.symbol_lookup(p.q)
+            response.raise_for_status()
+            raw = response.json()
+
         return FS.SymbolLookupResponse.model_validate(raw)
-    except (ValidationError, Exception):
+    except (ValidationError, httpx.HTTPError, Exception) as e:
+        logger.error(f"[Finnhub] Error en symbol_lookup: {e}")
         return None
 
 
@@ -40,15 +83,25 @@ def symbol_lookup_params(p: FS.SymbolLookupParams) -> Optional[FS.SymbolLookupRe
 def stock_symbols(p: FS.StockSymbolsParams) -> Optional[List[FS.StockSymbolItem]]:
     """Obtiene la lista de símbolos soportados para un exchange específico."""
     try:
-        raw = finnhub_client.stock_symbols(
-            exchange=p.exchange,
-            mic=p.mic,
-            security_type=p.security_type,
-        )
+        url = f"{__BASE_URL}/stock/symbol"
+        extra: Dict[str, Any] = {"exchange": p.exchange}
+        if p.mic:
+            extra["mic"] = p.mic
+        if p.security_type:
+            extra["securityType"] = p.security_type
+
+        with httpx.Client(timeout=20.0, follow_redirects=True) as client:
+            response = client.get(
+                url, headers=_get_headers(), params=_build_params(extra)
+            )
+            response.raise_for_status()
+            raw = response.json()
+
         if not isinstance(raw, list):
             return None
         return [FS.StockSymbolItem.model_validate(item) for item in raw]
-    except (ValidationError, Exception):
+    except (ValidationError, httpx.HTTPError, Exception) as e:
+        logger.error(f"[Finnhub] Error en stock_symbols: {e}")
         return None
 
 
@@ -64,9 +117,19 @@ stock_symbol = stock_symbols
 def market_status(p: FS.MarketStatusParams) -> Optional[FS.MarketStatusResponse]:
     """Consulta el estado operativo actual de un mercado bursátil (abierto/cerrado/sesión)."""
     try:
-        raw = finnhub_client.market_status(exchange=p.exchange)
+        url = f"{__BASE_URL}/stock/market-status"
+        extra: Dict[str, Any] = {"exchange": p.exchange}
+
+        with httpx.Client(timeout=20.0, follow_redirects=True) as client:
+            response = client.get(
+                url, headers=_get_headers(), params=_build_params(extra)
+            )
+            response.raise_for_status()
+            raw = response.json()
+
         return FS.MarketStatusResponse.model_validate(raw)
-    except (ValidationError, Exception):
+    except (ValidationError, httpx.HTTPError, Exception) as e:
+        logger.error(f"[Finnhub] Error en market_status: {e}")
         return None
 
 
@@ -78,14 +141,24 @@ def market_status(p: FS.MarketStatusParams) -> Optional[FS.MarketStatusResponse]
 def market_news(p: FS.MarketNewsParams) -> Optional[List[FS.NewsArticle]]:
     """Obtiene noticias generales del mercado según categoría (general, forex, crypto, merger)."""
     try:
-        raw = finnhub_client.general_news(
-            category=p.category,
-            min_id=p.min_id if p.min_id is not None else 0,
-        )
+        url = f"{__BASE_URL}/news"
+        extra: Dict[str, Any] = {
+            "category": p.category,
+            "minId": p.min_id if p.min_id is not None else 0,
+        }
+
+        with httpx.Client(timeout=20.0, follow_redirects=True) as client:
+            response = client.get(
+                url, headers=_get_headers(), params=_build_params(extra)
+            )
+            response.raise_for_status()
+            raw = response.json()
+
         if not isinstance(raw, list):
             return None
         return [FS.NewsArticle.model_validate(item) for item in raw]
-    except (ValidationError, Exception):
+    except (ValidationError, httpx.HTTPError, Exception) as e:
+        logger.error(f"[Finnhub] Error en market_news: {e}")
         return None
 
 
@@ -93,21 +166,29 @@ def market_news(p: FS.MarketNewsParams) -> Optional[List[FS.NewsArticle]]:
 # 5. Company News (/company-news)
 # ==============================================================================
 
-# TODO: Este va directo a la parte de limpieza para el entrenamiento de AI
-
 
 def company_news(p: FS.CompanyNewsParams) -> Optional[List[FS.NewsArticle]]:
     """Obtiene noticias de una empresa en un rango de fechas determinado."""
     try:
-        raw = finnhub_client.company_news(
-            symbol=p.symbol,
-            _from=str(p.from_date),
-            to=str(p.to_date),
-        )
+        url = f"{__BASE_URL}/company-news"
+        extra: Dict[str, Any] = {
+            "symbol": p.symbol,
+            "from": str(p.from_date),
+            "to": str(p.to_date),
+        }
+
+        with httpx.Client(timeout=20.0, follow_redirects=True) as client:
+            response = client.get(
+                url, headers=_get_headers(), params=_build_params(extra)
+            )
+            response.raise_for_status()
+            raw = response.json()
+
         if not isinstance(raw, list):
             return None
         return [FS.NewsArticle.model_validate(item) for item in raw]
-    except (ValidationError, Exception):
+    except (ValidationError, httpx.HTTPError, Exception) as e:
+        logger.error(f"[Finnhub] Error en company_news: {e}")
         return None
 
 
@@ -115,21 +196,29 @@ def company_news(p: FS.CompanyNewsParams) -> Optional[List[FS.NewsArticle]]:
 # 6. Insider Sentiment (/stock/insider-sentiment)
 # ==============================================================================
 
-# TODO: Este va directo a la parte de limpieza para el entrenamiento de AI
-
 
 def insider_sentiment(
     p: FS.InsiderSentimentParams,
 ) -> Optional[FS.InsiderSentimentResponse]:
     """Consulta el sentimiento mensual de insiders (compras/ventas y puntuación MSPR)."""
     try:
-        raw = finnhub_client.stock_insider_sentiment(
-            symbol=p.symbol,
-            _from=p.from_date,
-            to=p.to_date,
-        )
+        url = f"{__BASE_URL}/stock/insider-sentiment"
+        extra: Dict[str, Any] = {"symbol": p.symbol}
+        if p.from_date:
+            extra["from"] = str(p.from_date)
+        if p.to_date:
+            extra["to"] = str(p.to_date)
+
+        with httpx.Client(timeout=20.0, follow_redirects=True) as client:
+            response = client.get(
+                url, headers=_get_headers(), params=_build_params(extra)
+            )
+            response.raise_for_status()
+            raw = response.json()
+
         return FS.InsiderSentimentResponse.model_validate(raw)
-    except (ValidationError, Exception):
+    except (ValidationError, httpx.HTTPError, Exception) as e:
+        logger.error(f"[Finnhub] Error en insider_sentiment: {e}")
         return None
 
 
@@ -137,20 +226,28 @@ def insider_sentiment(
 # 7. Trades (WebSocket & Historical Tick Data)
 # ==============================================================================
 
-# TODO: Este va directo a la parte de limpieza para el entrenamiento de AI
-
 
 def historical_ticks(p: FS.HistoricalTickParams) -> Optional[FS.HistoricalTickResponse]:
     """Obtiene ticks y datos históricos de operaciones para una fecha determinada."""
     try:
-        raw = finnhub_client.stock_tick(
-            symbol=p.symbol,
-            date=str(p.date),
-            limit=p.limit if p.limit is not None else 500,
-            skip=p.skip if p.skip is not None else 0,
-        )
+        url = f"{__BASE_URL}/stock/tick"
+        extra: Dict[str, Any] = {
+            "symbol": p.symbol,
+            "date": str(p.date),
+            "limit": p.limit if p.limit is not None else 500,
+            "skip": p.skip if p.skip is not None else 0,
+        }
+
+        with httpx.Client(timeout=20.0, follow_redirects=True) as client:
+            response = client.get(
+                url, headers=_get_headers(), params=_build_params(extra)
+            )
+            response.raise_for_status()
+            raw = response.json()
+
         return FS.HistoricalTickResponse.model_validate(raw)
-    except (ValidationError, Exception):
+    except (ValidationError, httpx.HTTPError, Exception) as e:
+        logger.error(f"[Finnhub] Error en historical_ticks: {e}")
         return None
 
 
@@ -173,7 +270,8 @@ def parse_trade_message(
         if isinstance(message, str):
             return FS.WebSocketTradeMessage.model_validate_json(message)
         return FS.WebSocketTradeMessage.model_validate(message)
-    except (ValidationError, Exception):
+    except (ValidationError, Exception) as e:
+        logger.error(f"[Finnhub] Error al parsear mensaje de trade: {e}")
         return None
 
 

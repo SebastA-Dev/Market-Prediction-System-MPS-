@@ -13,7 +13,7 @@ Covers:
 
 import datetime
 from typing import List, Optional
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 
 
 class BaseFinnhubModel(BaseModel):
@@ -121,8 +121,8 @@ class NewsArticle(BaseFinnhubModel):
 class CompanyNewsParams(BaseFinnhubModel):
     """Query parameters for Company News."""
     symbol: str = Field(..., description="Company symbol (e.g. 'AAPL')")
-    from_date: datetime.date = Field(..., alias="from", description="Start date (YYYY-MM-DD)")
-    to_date: datetime.date = Field(..., alias="to", description="End date (YYYY-MM-DD)")
+    from_date: datetime.date = Field(..., validation_alias=AliasChoices("from", "from_date"), description="Start date (YYYY-MM-DD)")
+    to_date: datetime.date = Field(..., validation_alias=AliasChoices("to", "to_date"), description="End date (YYYY-MM-DD)")
 
 
 # ==============================================================================
@@ -132,8 +132,8 @@ class CompanyNewsParams(BaseFinnhubModel):
 class InsiderSentimentParams(BaseFinnhubModel):
     """Query parameters for Insider Sentiment."""
     symbol: str = Field(..., description="Company ticker symbol (e.g. 'AAPL')")
-    from_date: Optional[str] = Field(None, alias="from", description="Start date (YYYY-MM-DD)")
-    to_date: Optional[str] = Field(None, alias="to", description="End date (YYYY-MM-DD)")
+    from_date: Optional[str] = Field(None, validation_alias=AliasChoices("from", "from_date"), description="Start date (YYYY-MM-DD)")
+    to_date: Optional[str] = Field(None, validation_alias=AliasChoices("to", "to_date"), description="End date (YYYY-MM-DD)")
 
 
 class InsiderSentimentItem(BaseFinnhubModel):

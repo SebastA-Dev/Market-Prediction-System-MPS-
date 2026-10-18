@@ -20,6 +20,10 @@ import time
 from typing import Any, Dict, List, Optional
 
 import logging
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from fastapi import BackgroundTasks, FastAPI, HTTPException, Query, status
 from pydantic import BaseModel, Field
 import uvicorn
@@ -33,6 +37,15 @@ from src.domain.models.market import (
     MarketSignalPayload,
     MarketTickDocument,
     SignalType,
+)
+
+from src.infrastructure.api.routers import (
+    CoinGecko as cg,
+    Finnhub as fn,
+    FMP as f,
+    FRED as fr,
+    Polygon as p,
+    YahooFinance as yf,
 )
 from src.domain.services.data_binarization.qlib_bin_dump import QlibBinaryDumpService
 from src.domain.services.data_cleaning.clean_market_data import DataCleaningService
@@ -80,6 +93,13 @@ app = FastAPI(
 )
 
 
+app.include_router(cg.router)
+app.include_router(fn.router)
+app.include_router(f.router)
+app.include_router(fr.router)
+app.include_router(p.router)
+app.include_router(yf.router)
+
 # ==============================================================================
 # Modelos de Entrada / Salida para la API Conversacional y Pipeline
 # ==============================================================================
@@ -123,7 +143,7 @@ class PipelineRunRequest(BaseModel):
 
 def parse_and_classify_intent(
     prompt: str,
-) -> Tuple[IntentType, Optional[float], Optional[str], Optional[str]]:
+) -> tuple[IntentType, Optional[float], Optional[str], Optional[str]]:
     """
     Clasifica la consulta del usuario en INTENT_MACRO, INTENT_SECTORIAL o INTENT_ACTIVO
     y extrae el monto, sector o ticker correspondiente.
@@ -248,10 +268,9 @@ def predict_intent(req: IntentRequest):
             # Fallback en caso de activo de respaldo
             df_raw = DataAcquisitionService.fetch_polygon_ohlcv(sym)
 
-        # 2. Limpieza y validación (RF-06, RF-12)
         is_valid, df_clean, msg = DataCleaningService.clean_ohlcv_dataframe(
             df_raw, ticker=sym
-        )
+        )  # ty: ignore[invalid-argument-type]
         if not is_valid:
             continue
 

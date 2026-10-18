@@ -12,7 +12,7 @@ import pandas as pd
 logger = logging.getLogger(__name__)
 
 # Importación de infraestructura
-from infrastructure.api.routers import (
+from src.infrastructure.api.routers import (
     YahooFinance as YF_router,
     Polygon as PG_router,
     Finnhub as FH_router,
@@ -20,7 +20,7 @@ from infrastructure.api.routers import (
     FRED as FRED_router,
     CoinGecko as CG_router,
 )
-from infrastructure.data_providers.schemas import (
+from src.infrastructure.data_providers.schemas import (
     YahooFinanceSchemas as YF_schemas,
     PolygonSchemas as PG_schemas,
     FinnhubSchema as FH_schemas,

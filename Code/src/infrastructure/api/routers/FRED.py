@@ -9,7 +9,8 @@ from ...data_providers.schemas import FREDSchemas as FRED
 # Configuración y Autenticación Federal Reserve Economic Data (FRED)
 # ==============================================================================
 
-# TODO: Colocar la API KEY extraida de .env. Crear en .env example
+# TODO: No funciona
+
 FRED_API_KEY = os.getenv("FRED_APIKEY", "")
 __BASE_URL = "https://api.stlouisfed.org/fred"
 
