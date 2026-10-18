@@ -29,6 +29,8 @@ from pydantic import BaseModel, Field
 import uvicorn
 
 logger = logging.getLogger(__name__)
+# httpx logs complete URLs at INFO, which can expose API keys passed as query params.
+logging.getLogger("httpx").setLevel(logging.WARNING)
 
 # Modelos y servicios del dominio
 from src.domain.models.market import (

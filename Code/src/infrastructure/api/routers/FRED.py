@@ -4,6 +4,7 @@ import httpx
 from pydantic import ValidationError
 from fastapi import APIRouter, Depends
 from ...data_providers.schemas import FREDSchemas as FRED
+from ..errors import raise_upstream_error
 
 # ==============================================================================
 # Configuración y Autenticación Federal Reserve Economic Data (FRED)
@@ -66,8 +67,8 @@ def series_observations(
             return None
 
         return FRED.FREDObservationsResponse.model_validate(raw)
-    except (ValidationError, httpx.HTTPError, Exception):
-        return None
+    except (ValidationError, httpx.HTTPError, ValueError) as exc:
+        raise_upstream_error(exc)
 
 
 # ==============================================================================
@@ -96,8 +97,8 @@ def series_metadata(p: FRED.FREDSeriesParams) -> Optional[FRED.FREDSeriesRespons
             return None
 
         return FRED.FREDSeriesResponse.model_validate(raw)
-    except (ValidationError, httpx.HTTPError, Exception):
-        return None
+    except (ValidationError, httpx.HTTPError, ValueError) as exc:
+        raise_upstream_error(exc)
 
 
 # ==============================================================================

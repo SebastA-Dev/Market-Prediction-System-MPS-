@@ -3,6 +3,7 @@ import httpx
 from pydantic import ValidationError
 from fastapi import APIRouter, Depends
 from ...data_providers.schemas import YahooFinanceSchemas as YF
+from ..errors import raise_upstream_error
 
 # ==============================================================================
 # Configuración Yahoo Finance API v8 / v7 / v10 / v1
@@ -45,7 +46,11 @@ def _get_session_and_crumb() -> Tuple[httpx.Client, Optional[str]]:
         # 1. Obtener cookie de sesión desde fc.yahoo.com
         client.get("https://fc.yahoo.com")
         # 2. Obtener crumb de autenticación
-        crumb_resp = client.get(f"{__BASE_URL}/v1/test/getcrumb")
+        # Yahoo's crumb endpoint rejects an application/json Accept header with 406.
+        crumb_resp = client.get(
+            f"{__BASE_URL}/v1/test/getcrumb",
+            headers={"Accept": "*/*"},
+        )
         if crumb_resp.status_code == 200 and crumb_resp.text:
             _cached_crumb = crumb_resp.text.strip()
             _cached_cookies = client.cookies
@@ -83,8 +88,8 @@ def chart(p: YF.YahooChartParams) -> Optional[YF.YahooChartResponse]:
             return None
 
         return YF.YahooChartResponse.model_validate(raw)
-    except (ValidationError, httpx.HTTPError, Exception):
-        return None
+    except (ValidationError, httpx.HTTPError, ValueError) as exc:
+        raise_upstream_error(exc)
 
 
 # ==============================================================================
@@ -103,17 +108,19 @@ def quote(p: YF.YahooQuoteParams) -> Optional[YF.YahooQuoteResponse]:
         if crumb:
             params["crumb"] = crumb
 
-        with client:
+        try:
             response = client.get(url, params=params)
             response.raise_for_status()
             raw = response.json()
+        finally:
+            client.close()
 
         if not isinstance(raw, dict):
             return None
 
         return YF.YahooQuoteResponse.model_validate(raw)
-    except (ValidationError, httpx.HTTPError, Exception):
-        return None
+    except (ValidationError, httpx.HTTPError, ValueError) as exc:
+        raise_upstream_error(exc)
 
 
 # ==============================================================================
@@ -132,17 +139,19 @@ def quote_summary(p: YF.YahooQuoteSummaryParams) -> Optional[YF.YahooQuoteSummar
         if crumb:
             params["crumb"] = crumb
 
-        with client:
+        try:
             response = client.get(url, params=params)
             response.raise_for_status()
             raw = response.json()
+        finally:
+            client.close()
 
         if not isinstance(raw, dict):
             return None
 
         return YF.YahooQuoteSummaryResponse.model_validate(raw)
-    except (ValidationError, httpx.HTTPError, Exception):
-        return None
+    except (ValidationError, httpx.HTTPError, ValueError) as exc:
+        raise_upstream_error(exc)
 
 
 # ==============================================================================
@@ -172,8 +181,8 @@ def search(p: YF.YahooSearchParams) -> Optional[YF.YahooSearchResponse]:
             return None
 
         return YF.YahooSearchResponse.model_validate(raw)
-    except (ValidationError, httpx.HTTPError, Exception):
-        return None
+    except (ValidationError, httpx.HTTPError, ValueError) as exc:
+        raise_upstream_error(exc)
 
 
 # ==============================================================================

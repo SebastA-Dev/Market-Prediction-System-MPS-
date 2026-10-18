@@ -35,31 +35,32 @@ class BaseFMPModel(BaseModel):
 # ==============================================================================
 
 class SectorPerformanceItem(BaseFMPModel):
-    """Real-time performance snapshot for a market sector."""
+    """Daily performance snapshot for a market sector."""
+    date: Optional[datetime.date] = None
     sector: str = Field(..., description="Name of the economic sector (e.g. Technology)")
-    changes_percentage: str = Field(..., alias="changesPercentage", description="Percentage change formatted string (e.g. '0.85%')")
+    exchange: Optional[str] = None
+    average_change: Optional[float] = Field(None, alias="averageChange")
 
 
 class HistoricalSectorPerformanceItem(BaseFMPModel):
-    """Historical daily performance per market sector."""
+    """Historical daily performance for a selected market sector."""
     date: datetime.date = Field(..., description="Date of observation")
-    basic_materials: Optional[float] = Field(None, alias="basicMaterialsChangesPercentage")
-    communication_services: Optional[float] = Field(None, alias="communicationServicesChangesPercentage")
-    consumer_cyclical: Optional[float] = Field(None, alias="consumerCyclicalChangesPercentage")
-    consumer_defensive: Optional[float] = Field(None, alias="consumerDefensiveChangesPercentage")
-    energy: Optional[float] = Field(None, alias="energyChangesPercentage")
-    financial: Optional[float] = Field(None, alias="financialChangesPercentage")
-    healthcare: Optional[float] = Field(None, alias="healthcareChangesPercentage")
-    industrials: Optional[float] = Field(None, alias="industrialsChangesPercentage")
-    real_estate: Optional[float] = Field(None, alias="realEstateChangesPercentage")
-    technology: Optional[float] = Field(None, alias="technologyChangesPercentage")
-    utilities: Optional[float] = Field(None, alias="utilitiesChangesPercentage")
+    sector: str
+    exchange: Optional[str] = None
+    average_change: Optional[float] = Field(None, alias="averageChange")
+
+
+class HistoricalSectorPerformanceParams(BaseFMPModel):
+    sector: str = Field(..., description="Sector name, e.g. Technology")
+    from_date: Optional[str] = Field(None, alias="from", description="Start date (YYYY-MM-DD)")
+    to_date: Optional[str] = Field(None, alias="to", description="End date (YYYY-MM-DD)")
+    exchange: Optional[str] = None
 
 
 class TreasuryRatesParams(BaseFMPModel):
     """Query parameters for US Treasury rates endpoint."""
-    from_date: Optional[str] = Field(None, alias="from", description="Start date (YYYY-MM-DD)")
-    to_date: Optional[str] = Field(None, alias="to", description="End date (YYYY-MM-DD)")
+    from_date: str = Field(..., alias="from", description="Start date (YYYY-MM-DD)")
+    to_date: str = Field(..., alias="to", description="End date (YYYY-MM-DD)")
 
 
 class TreasuryRatesItem(BaseFMPModel):
@@ -118,10 +119,10 @@ class CompanyProfileItem(BaseFMPModel):
     price: float = Field(..., description="Current stock price")
     beta: Optional[float] = Field(None, description="Beta coefficient")
     vol_avg: Optional[float] = Field(None, alias="volAvg", description="Average daily trading volume")
-    mkt_cap: Optional[float] = Field(None, alias="mktCap", description="Market capitalization")
-    last_div: Optional[float] = Field(None, alias="lastDiv", description="Last dividend paid")
+    mkt_cap: Optional[float] = Field(None, alias="marketCap", description="Market capitalization")
+    last_div: Optional[float] = Field(None, alias="lastDividend", description="Last dividend paid")
     range: Optional[str] = Field(None, description="52-week price range")
-    changes: Optional[float] = Field(None, description="Daily price change")
+    changes: Optional[float] = Field(None, alias="change", description="Daily price change")
     company_name: str = Field(..., alias="companyName", description="Company legal name")
     currency: Optional[str] = Field(None, description="Trading currency")
     exchange: Optional[str] = Field(None, description="Exchange name")
@@ -134,7 +135,7 @@ class CompanyProfileItem(BaseFMPModel):
 class FinancialRatiosTTMItem(BaseFMPModel):
     """Trailing twelve months financial ratios for quantitative scoring."""
     symbol: Optional[str] = Field(None, description="Ticker symbol")
-    dividend_yield_ttm: Optional[float] = Field(None, alias="dividendYielTTM", description="Dividend yield TTM")
+    dividend_yield_ttm: Optional[float] = Field(None, alias="dividendYieldTTM", description="Dividend yield TTM")
     current_ratio_ttm: Optional[float] = Field(None, alias="currentRatioTTM", description="Current liquidity ratio")
     quick_ratio_ttm: Optional[float] = Field(None, alias="quickRatioTTM", description="Quick liquidity ratio")
     cash_ratio_ttm: Optional[float] = Field(None, alias="cashRatioTTM", description="Cash ratio")
@@ -143,8 +144,8 @@ class FinancialRatiosTTMItem(BaseFMPModel):
     net_profit_margin_ttm: Optional[float] = Field(None, alias="netProfitMarginTTM", description="Net profit margin")
     return_on_equity_ttm: Optional[float] = Field(None, alias="returnOnEquityTTM", description="ROE (Return on Equity)")
     return_on_assets_ttm: Optional[float] = Field(None, alias="returnOnAssetsTTM", description="ROA (Return on Assets)")
-    debt_to_equity_ttm: Optional[float] = Field(None, alias="debtToEquityTTM", description="Debt to Equity ratio")
-    price_to_earnings_ttm: Optional[float] = Field(None, alias="priceToEarningsTTM", description="P/E ratio TTM")
+    debt_to_equity_ttm: Optional[float] = Field(None, alias="debtToEquityRatioTTM", description="Debt to Equity ratio")
+    price_to_earnings_ttm: Optional[float] = Field(None, alias="priceToEarningsRatioTTM", description="P/E ratio TTM")
     price_to_sales_ttm: Optional[float] = Field(None, alias="priceToSalesTTM", description="P/S ratio TTM")
     price_to_book_ttm: Optional[float] = Field(None, alias="priceToBookRatioTTM", description="P/B ratio TTM")
 
@@ -157,7 +158,7 @@ class KeyMetricsTTMItem(BaseFMPModel):
     operating_cash_flow_per_share_ttm: Optional[float] = Field(None, alias="operatingCashFlowPerShareTTM")
     free_cash_flow_per_share_ttm: Optional[float] = Field(None, alias="freeCashFlowPerShareTTM")
     cash_per_share_ttm: Optional[float] = Field(None, alias="cashPerShareTTM")
-    pe_ratio_ttm: Optional[float] = Field(None, alias="peRatioTTM")
+    pe_ratio_ttm: Optional[float] = Field(None, alias="priceToEarningsRatioTTM")
     pocfratio_ttm: Optional[float] = Field(None, alias="pocfratioTTM", description="Price to Operating Cash Flow")
     pfcf_ratio_ttm: Optional[float] = Field(None, alias="pfcfRatioTTM", description="Price to Free Cash Flow")
     book_value_per_share_ttm: Optional[float] = Field(None, alias="bookValuePerShareTTM")
@@ -194,7 +195,7 @@ class HistoricalDailyPriceRecord(BaseFMPModel):
     high: float = Field(..., description="Highest price of the session")
     low: float = Field(..., description="Lowest price of the session")
     close: float = Field(..., description="Closing price")
-    adj_close: float = Field(..., alias="adjClose", description="Split and dividend adjusted closing price")
+    adj_close: Optional[float] = Field(None, alias="adjClose", description="Split and dividend adjusted closing price")
     volume: float = Field(..., description="Trading volume")
     unadjusted_volume: Optional[float] = Field(None, alias="unadjustedVolume", description="Raw trading volume")
     change: Optional[float] = Field(None, description="Absolute price change")

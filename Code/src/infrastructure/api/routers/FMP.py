@@ -1,33 +1,33 @@
 import os
+from datetime import date
 from typing import Dict, List, Optional
 import httpx
 from pydantic import ValidationError
 from fastapi import APIRouter, Depends, Query
 from ...data_providers.schemas import FMPSchemas as FMP
+from ..errors import raise_upstream_error
 
 # ==============================================================================
 # Configuración y Autenticación Financial Modeling Prep (FMP)
 # ==============================================================================
 
-# TODO: No funciona
-
 FMP_API_KEY = os.getenv("FMP_APIKEY", "")
-__BASE_URL = "https://financialmodelingprep.com"
+__BASE_URL = "https://financialmodelingprep.com/stable"
 
 router = APIRouter(prefix="/fmp", tags=["FMP"])
 
 
 def _get_headers() -> Dict[str, str]:
-    """Retorna las cabeceras HTTP estándar para FMP."""
-    return {"accept": "application/json"}
+    """Autentica por cabecera para no exponer la clave en URLs y logs."""
+    headers = {"accept": "application/json"}
+    if FMP_API_KEY:
+        headers["apikey"] = FMP_API_KEY
+    return headers
 
 
 def _add_apikey(params: Optional[dict] = None) -> dict:
-    """Inyecta el query param 'apikey' requerido por FMP."""
-    p = {k: v for k, v in (params or {}).items() if v is not None}
-    if FMP_API_KEY:
-        p["apikey"] = FMP_API_KEY
-    return p
+    """Elimina parámetros nulos; la clave viaja en el encabezado apikey."""
+    return {k: v for k, v in (params or {}).items() if v is not None}
 
 
 # ==============================================================================
@@ -35,37 +35,44 @@ def _add_apikey(params: Optional[dict] = None) -> dict:
 # ==============================================================================
 
 
-def sector_performance() -> Optional[List[FMP.SectorPerformanceItem]]:
+def sector_performance(snapshot_date: Optional[str] = None) -> Optional[List[FMP.SectorPerformanceItem]]:
     """
-    Endpoint: GET /api/v3/sector-performance
-    Snapshot de rendimiento en tiempo real por sectores económicos.
+    Endpoint: GET /stable/sector-performance-snapshot?date=...
+    Snapshot diario de rendimiento por sectores económicos.
     """
     try:
-        url = f"{__BASE_URL}/api/v3/sector-performance"
+        url = f"{__BASE_URL}/sector-performance-snapshot"
+        params = {"date": snapshot_date or date.today().isoformat()}
         with httpx.Client(timeout=15.0) as client:
-            response = client.get(url, headers=_get_headers(), params=_add_apikey())
+            response = client.get(url, headers=_get_headers(), params=_add_apikey(params))
             response.raise_for_status()
             raw = response.json()
 
         if not isinstance(raw, list):
             return None
         return [FMP.SectorPerformanceItem.model_validate(item) for item in raw]
-    except (ValidationError, httpx.HTTPError, Exception):
-        return None
+    except (ValidationError, httpx.HTTPError, ValueError) as exc:
+        raise_upstream_error(exc)
 
 
 def historical_sector_performance(
-    limit: int = 50,
+    p: FMP.HistoricalSectorPerformanceParams,
 ) -> Optional[List[FMP.HistoricalSectorPerformanceItem]]:
     """
-    Endpoint: GET /api/v3/historical-sectors-performance
-    Rendimiento histórico diario desagregado por sectores.
+    Endpoint: GET /stable/historical-sector-performance?sector=...
+    Rendimiento histórico diario para el sector seleccionado.
     """
     try:
-        url = f"{__BASE_URL}/api/v3/historical-sectors-performance"
+        url = f"{__BASE_URL}/historical-sector-performance"
+        query_params = {
+            "sector": p.sector,
+            "from": p.from_date,
+            "to": p.to_date,
+            "exchange": p.exchange,
+        }
         with httpx.Client(timeout=15.0) as client:
             response = client.get(
-                url, headers=_get_headers(), params=_add_apikey({"limit": limit})
+                url, headers=_get_headers(), params=_add_apikey(query_params)
             )
             response.raise_for_status()
             raw = response.json()
@@ -75,17 +82,17 @@ def historical_sector_performance(
         return [
             FMP.HistoricalSectorPerformanceItem.model_validate(item) for item in raw
         ]
-    except (ValidationError, httpx.HTTPError, Exception):
-        return None
+    except (ValidationError, httpx.HTTPError, ValueError) as exc:
+        raise_upstream_error(exc)
 
 
 def treasury_rates(p: FMP.TreasuryRatesParams) -> Optional[List[FMP.TreasuryRatesItem]]:
     """
-    Endpoint: GET /api/v4/treasury
+    Endpoint: GET /stable/treasury-rates
     Tasas de la curva de rendimientos del Tesoro de EE.UU. (1M a 30Y).
     """
     try:
-        url = f"{__BASE_URL}/api/v4/treasury"
+        url = f"{__BASE_URL}/treasury-rates"
         query_params = {
             "from": p.from_date,
             "to": p.to_date,
@@ -100,19 +107,19 @@ def treasury_rates(p: FMP.TreasuryRatesParams) -> Optional[List[FMP.TreasuryRate
         if not isinstance(raw, list):
             return None
         return [FMP.TreasuryRatesItem.model_validate(item) for item in raw]
-    except (ValidationError, httpx.HTTPError, Exception):
-        return None
+    except (ValidationError, httpx.HTTPError, ValueError) as exc:
+        raise_upstream_error(exc)
 
 
 def company_screener(
     p: FMP.CompanyScreenerParams,
 ) -> Optional[List[FMP.CompanyScreenerItem]]:
     """
-    Endpoint: GET /api/v3/stock-screener
+    Endpoint: GET /stable/company-screener
     Filtro cuantitativo de empresas por sector, industria, capitalización y beta.
     """
     try:
-        url = f"{__BASE_URL}/api/v3/stock-screener"
+        url = f"{__BASE_URL}/company-screener"
         query_params = {
             "sector": p.sector,
             "industry": p.industry,
@@ -132,8 +139,8 @@ def company_screener(
         if not isinstance(raw, list):
             return None
         return [FMP.CompanyScreenerItem.model_validate(item) for item in raw]
-    except (ValidationError, httpx.HTTPError, Exception):
-        return None
+    except (ValidationError, httpx.HTTPError, ValueError) as exc:
+        raise_upstream_error(exc)
 
 
 # ==============================================================================
@@ -143,70 +150,70 @@ def company_screener(
 
 def company_profile(p: FMP.SymbolParam) -> Optional[List[FMP.CompanyProfileItem]]:
     """
-    Endpoint: GET /api/v3/profile/{symbol}
+    Endpoint: GET /stable/profile?symbol=...
     Perfil integral, valoración intrínseca DCF, beta y capitalización bursátil.
     """
     try:
-        url = f"{__BASE_URL}/api/v3/profile/{p.symbol}"
+        url = f"{__BASE_URL}/profile"
         with httpx.Client(timeout=15.0) as client:
-            response = client.get(url, headers=_get_headers(), params=_add_apikey())
+            response = client.get(url, headers=_get_headers(), params=_add_apikey({"symbol": p.symbol}))
             response.raise_for_status()
             raw = response.json()
 
         if not isinstance(raw, list):
             return None
         return [FMP.CompanyProfileItem.model_validate(item) for item in raw]
-    except (ValidationError, httpx.HTTPError, Exception):
-        return None
+    except (ValidationError, httpx.HTTPError, ValueError) as exc:
+        raise_upstream_error(exc)
 
 
 def ratios_ttm(p: FMP.SymbolParam) -> Optional[List[FMP.FinancialRatiosTTMItem]]:
     """
-    Endpoint: GET /api/v3/ratios-ttm/{symbol}
+    Endpoint: GET /stable/ratios-ttm?symbol=...
     Ratios financieros trailing twelve months (P/E, P/B, ROE, ROA, Debt/Equity).
     """
     try:
-        url = f"{__BASE_URL}/api/v3/ratios-ttm/{p.symbol}"
+        url = f"{__BASE_URL}/ratios-ttm"
         with httpx.Client(timeout=15.0) as client:
-            response = client.get(url, headers=_get_headers(), params=_add_apikey())
+            response = client.get(url, headers=_get_headers(), params=_add_apikey({"symbol": p.symbol}))
             response.raise_for_status()
             raw = response.json()
 
         if not isinstance(raw, list):
             return None
         return [FMP.FinancialRatiosTTMItem.model_validate(item) for item in raw]
-    except (ValidationError, httpx.HTTPError, Exception):
-        return None
+    except (ValidationError, httpx.HTTPError, ValueError) as exc:
+        raise_upstream_error(exc)
 
 
 def key_metrics_ttm(p: FMP.SymbolParam) -> Optional[List[FMP.KeyMetricsTTMItem]]:
     """
-    Endpoint: GET /api/v3/key-metrics-ttm/{symbol}
+    Endpoint: GET /stable/key-metrics-ttm?symbol=...
     Métricas de valoración empresarial TTM (EV, EV/EBITDA, Free Cash Flow, ROIC).
     """
     try:
-        url = f"{__BASE_URL}/api/v3/key-metrics-ttm/{p.symbol}"
+        url = f"{__BASE_URL}/key-metrics-ttm"
         with httpx.Client(timeout=15.0) as client:
-            response = client.get(url, headers=_get_headers(), params=_add_apikey())
+            response = client.get(url, headers=_get_headers(), params=_add_apikey({"symbol": p.symbol}))
             response.raise_for_status()
             raw = response.json()
 
         if not isinstance(raw, list):
             return None
         return [FMP.KeyMetricsTTMItem.model_validate(item) for item in raw]
-    except (ValidationError, httpx.HTTPError, Exception):
-        return None
+    except (ValidationError, httpx.HTTPError, ValueError) as exc:
+        raise_upstream_error(exc)
 
 
 def price_target_consensus(
     p: FMP.SymbolParam,
 ) -> Optional[List[FMP.PriceTargetConsensusItem]]:
     """
-    Endpoint: GET /api/v4/price-target-consensus
+    Endpoint: GET /stable/price-target-consensus?symbol=...
     Consenso de precios objetivo de analistas (high, low, median, consensus).
     """
     try:
-        url = f"{__BASE_URL}/api/v4/price-target-consensus"
+        url = f"{__BASE_URL}/price-target-consensus"
         with httpx.Client(timeout=15.0) as client:
             response = client.get(
                 url, headers=_get_headers(), params=_add_apikey({"symbol": p.symbol})
@@ -217,8 +224,8 @@ def price_target_consensus(
         if not isinstance(raw, list):
             return None
         return [FMP.PriceTargetConsensusItem.model_validate(item) for item in raw]
-    except (ValidationError, httpx.HTTPError, Exception):
-        return None
+    except (ValidationError, httpx.HTTPError, ValueError) as exc:
+        raise_upstream_error(exc)
 
 
 # ==============================================================================
@@ -230,12 +237,13 @@ def historical_price_full(
     p: FMP.HistoricalPriceFullParams,
 ) -> Optional[FMP.HistoricalPriceFullResponse]:
     """
-    Endpoint: GET /api/v3/historical-price-full/{symbol}
+    Endpoint: GET /stable/historical-price-eod/full?symbol=...
     Serie de tiempo histórica diaria completa con precios ajustados y volumen para Galformer.
     """
     try:
-        url = f"{__BASE_URL}/api/v3/historical-price-full/{p.symbol}"
+        url = f"{__BASE_URL}/historical-price-eod/full"
         query_params = {
+            "symbol": p.symbol,
             "from": p.from_date,
             "to": p.to_date,
         }
@@ -246,11 +254,12 @@ def historical_price_full(
             response.raise_for_status()
             raw = response.json()
 
-        if not isinstance(raw, dict):
+        if not isinstance(raw, list):
             return None
-        return FMP.HistoricalPriceFullResponse.model_validate(raw)
-    except (ValidationError, httpx.HTTPError, Exception):
-        return None
+        records = [FMP.HistoricalDailyPriceRecord.model_validate(item) for item in raw]
+        return FMP.HistoricalPriceFullResponse(symbol=p.symbol, historical=records)
+    except (ValidationError, httpx.HTTPError, ValueError) as exc:
+        raise_upstream_error(exc)
 
 
 # ==============================================================================
@@ -261,8 +270,10 @@ def historical_price_full(
 @router.get(
     "/sector-performance", response_model=Optional[List[FMP.SectorPerformanceItem]]
 )
-def get_sector_performance() -> Optional[List[FMP.SectorPerformanceItem]]:
-    return sector_performance()
+def get_sector_performance(
+    snapshot_date: Optional[str] = Query(None, alias="date"),
+) -> Optional[List[FMP.SectorPerformanceItem]]:
+    return sector_performance(snapshot_date=snapshot_date)
 
 
 @router.get(
@@ -270,9 +281,9 @@ def get_sector_performance() -> Optional[List[FMP.SectorPerformanceItem]]:
     response_model=Optional[List[FMP.HistoricalSectorPerformanceItem]],
 )
 def get_historical_sectors_performance(
-    limit: int = Query(50, ge=1, le=500)
+    p: FMP.HistoricalSectorPerformanceParams = Depends(),
 ) -> Optional[List[FMP.HistoricalSectorPerformanceItem]]:
-    return historical_sector_performance(limit=limit)
+    return historical_sector_performance(p)
 
 
 @router.get("/treasury", response_model=Optional[List[FMP.TreasuryRatesItem]])
@@ -280,13 +291,6 @@ def get_treasury_rates(
     p: FMP.TreasuryRatesParams = Depends(),
 ) -> Optional[List[FMP.TreasuryRatesItem]]:
     return treasury_rates(p)
-
-
-@router.get("/stock-screener", response_model=Optional[List[FMP.CompanyScreenerItem]])
-def get_company_screener(
-    p: FMP.CompanyScreenerParams = Depends(),
-) -> Optional[List[FMP.CompanyScreenerItem]]:
-    return company_screener(p)
 
 
 @router.get("/profile", response_model=Optional[List[FMP.CompanyProfileItem]])

@@ -4,6 +4,7 @@ import httpx
 from pydantic import ValidationError
 from fastapi import APIRouter, Depends
 from ...data_providers.schemas import PolygonSchemas as PG
+from ..errors import raise_upstream_error
 
 # ==============================================================================
 # Configuración y Autenticación Polygon.io API
@@ -59,8 +60,8 @@ def aggregates(p: PG.AggregatesParams) -> Optional[PG.AggregatesResponse]:
             return None
 
         return PG.AggregatesResponse.model_validate(raw)
-    except (ValidationError, httpx.HTTPError, Exception):
-        return None
+    except (ValidationError, httpx.HTTPError, ValueError) as exc:
+        raise_upstream_error(exc)
 
 
 # ==============================================================================
@@ -87,8 +88,8 @@ def grouped_daily(p: PG.GroupedDailyParams) -> Optional[PG.GroupedDailyResponse]
             return None
 
         return PG.GroupedDailyResponse.model_validate(raw)
-    except (ValidationError, httpx.HTTPError, Exception):
-        return None
+    except (ValidationError, httpx.HTTPError, ValueError) as exc:
+        raise_upstream_error(exc)
 
 
 # ==============================================================================
@@ -115,8 +116,8 @@ def daily_open_close(p: PG.DailyOpenCloseParams) -> Optional[PG.DailyOpenCloseRe
             return None
 
         return PG.DailyOpenCloseResponse.model_validate(raw)
-    except (ValidationError, httpx.HTTPError, Exception):
-        return None
+    except (ValidationError, httpx.HTTPError, ValueError) as exc:
+        raise_upstream_error(exc)
 
 
 # ==============================================================================
@@ -133,7 +134,7 @@ def ticker_details(p: PG.TickerDetailsParams) -> Optional[PG.TickerDetailsRespon
         url = f"{__BASE_URL}/v3/reference/tickers/{p.ticker}"
         params = {"date": p.date} if p.date else {}
 
-        with httpx.Client(timeout=15.0) as client:
+        with httpx.Client(timeout=30.0) as client:
             response = client.get(url, headers=_get_headers(), params=params)
             response.raise_for_status()
             raw = response.json()
@@ -142,8 +143,8 @@ def ticker_details(p: PG.TickerDetailsParams) -> Optional[PG.TickerDetailsRespon
             return None
 
         return PG.TickerDetailsResponse.model_validate(raw)
-    except (ValidationError, httpx.HTTPError, Exception):
-        return None
+    except (ValidationError, httpx.HTTPError, ValueError) as exc:
+        raise_upstream_error(exc)
 
 
 # ==============================================================================
@@ -167,8 +168,8 @@ def market_status() -> Optional[PG.PolygonMarketStatusResponse]:
             return None
 
         return PG.PolygonMarketStatusResponse.model_validate(raw)
-    except (ValidationError, httpx.HTTPError, Exception):
-        return None
+    except (ValidationError, httpx.HTTPError, ValueError) as exc:
+        raise_upstream_error(exc)
 
 
 # ==============================================================================
