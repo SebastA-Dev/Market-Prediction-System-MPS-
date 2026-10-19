@@ -1,0 +1,6 @@
+applicationType: default
+defaultPackage: com.mps
+testFramework: junit
+sourceLanguage: java
+buildTool: maven
+features: [app-name, cache-caffeine, data, data-jdbc, email-javamail, gitignore, hibernate-jpa, http-client, http-server-jdk, http-session, java, java-application, jdbc-hikari, json-schema, json-schema-validation, junit, junit-params, junit-platform-suite-engine, log4j2, maven, maven-enforcer-plugin, micronaut-aot, micronaut-http-validation, micronaut-processing-compiler-args, mockito, openapi, postgres, readme, security-jwt, security-oauth2, security-processor, serialization-jackson, static-resources, test-resources, yaml, yaml-build]
