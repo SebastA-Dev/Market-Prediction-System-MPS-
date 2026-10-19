@@ -1,0 +1,54 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mps-services"
+version = "0.1.0"
+description = "Market Prediction System (MPS) - Servicios de Ingesta Streaming, Validación Estadística y API"
+readme = "README.md"
+requires-python = ">=3.13"
+license = { text = "MIT" }
+authors = [
+    { name = "MPS Team" }
+]
+dependencies = [
+    # Framework Web y API REST
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "pydantic>=2.9.0",
+    "pydantic-settings>=2.6.0",
+
+    # Streaming en tiempo real y WebSockets
+    "websockets>=13.1",
+    "httpx>=0.28.0",
+    "tenacity>=9.0.0",
+
+    # Broker de Mensajería y Caché (Redis Pub/Sub)
+    "redis[hiredis]>=5.2.0",
+
+    # Persistencia Asíncrona (MongoDB Append-Only)
+    "motor>=3.6.0",
+    "pymongo>=4.9.0",
+
+    # Procesamiento Matemático y Validación Estadística (Z-test, Alpha Factors)
+    "numpy>=2.1.0",
+    "scipy>=1.14.0",
+    "pandas>=2.2.0",
+    "statsmodels>=0.14.4",
+
+    # Utilidades de Entorno
+    "python-dotenv>=1.0.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.24.0",
+    "pytest-cov>=6.0.0",
+    "ruff>=0.8.0",
+    "mypy>=1.13.0",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}

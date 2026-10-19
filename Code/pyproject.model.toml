@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mps-model-galformer"
+version = "0.1.0"
+description = "Galformer: A Transformer with Generative Decoding and a Hybrid Loss Function for Multi-Step Stock Market Index Prediction"
+readme = "src/domain/services/Galformer-Improved-Transformer-for-Time-Series-Prediction/README.md"
+requires-python = ">=3.7, <3.8"
+license = { text = "MIT" }
+authors = [
+    { name = "MPS Team" }
+]
+dependencies = [
+    "tensorflow==2.9.1",
+    "numpy>=1.21.6, <1.24.0",
+    "pandas>=1.3.5, <1.4.0",
+    "scikit-learn>=1.0.2, <1.1.0",
+    "matplotlib>=3.5.0, <3.6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0, <8.0.0",
+    "black",
+    "flake8",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
