@@ -6,15 +6,25 @@ micronaut:
       cookie: true
       header: true
   security:
-    authentication: cookie
+    authentication: bearer
     token:
+      generator:
+        access-token:
+          expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:3600}
       jwt:
+        claims-generator:
+          issuer: mps-users-service
         signatures:
           secret:
             generator:
               secret: ${JWT_GENERATOR_SIGNATURE_SECRET:pleaseChangeThisSecretForANewOne}
+              jws-algorithm: HS256
     intercept-url-map:
       - pattern: /api/v1/users/**
+        access:
+          - isAnonymous()
+      - pattern: /api/v1/auth/login
+        http-method: POST
         access:
           - isAnonymous()
       - pattern: /swagger/**
@@ -56,3 +66,9 @@ jpa:
         hbm2ddl:
           auto: update
         show_sql: false
+
+mps:
+  security:
+    login:
+      max-failed-attempts: 5
+      lock-duration: 15m

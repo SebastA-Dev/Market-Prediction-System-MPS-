@@ -1,3 +1,24 @@
+## Autenticación (login con JWT)
+
+| Método | Ruta | Acceso | Descripción |
+|---|---|---|---|
+| POST | `/api/v1/users` | público | Registro (UC-09a) |
+| POST | `/api/v1/auth/login` | público | Devuelve `{accessToken, tokenType: "Bearer", expiresIn, user}` |
+| GET | `/api/v1/auth/me` | `Authorization: Bearer <token>` | Identidad del token (ejemplo de endpoint protegido) |
+
+- El JWT se firma con HS256 (`micronaut-security-jwt`); `sub` es el UUID del usuario y `email` va como claim. Expira en `JWT_ACCESS_TOKEN_EXPIRATION` segundos (3600 por defecto).
+- **En cualquier entorno real hay que definir `JWT_GENERATOR_SIGNATURE_SECRET`** (mínimo 32 caracteres aleatorios); el valor por defecto es solo para desarrollo.
+- Respuestas: 401 con mensaje genérico si el correo o la contraseña fallan (no revela si la cuenta existe), 429 con `Retry-After` tras 5 intentos fallidos seguidos (bloqueo de 15 min, configurable en `mps.security.login`).
+- El contador de intentos es en memoria; con varias réplicas debe pasarse a Redis.
+
+```bash
+curl -X POST localhost:8080/api/v1/auth/login -H 'Content-Type: application/json' \
+  -d '{"email":"usuario@mps.com","password":"SecretPass123*"}'
+curl localhost:8080/api/v1/auth/me -H "Authorization: Bearer <accessToken>"
+```
+
+---
+
 ## Micronaut 5.2.2 Documentation
 
 - [User Guide](https://docs.micronaut.io/5.2.2/guide/index.html)

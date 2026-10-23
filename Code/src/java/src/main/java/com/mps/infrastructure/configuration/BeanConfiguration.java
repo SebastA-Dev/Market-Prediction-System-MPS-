@@ -1,8 +1,12 @@
 package com.mps.infrastructure.configuration;
 
+import com.mps.application.service.LoginUserService;
 import com.mps.application.service.RegisterUserService;
+import com.mps.domain.ports.inbound.LoginUserUseCase;
 import com.mps.domain.ports.inbound.RegisterUserUseCase;
+import com.mps.domain.ports.outbound.LoginAttemptPort;
 import com.mps.domain.ports.outbound.PasswordEncoderPort;
+import com.mps.domain.ports.outbound.TokenProviderPort;
 import com.mps.domain.ports.outbound.UserRepositoryPort;
 import io.micronaut.context.annotation.Factory;
 import jakarta.inject.Singleton;
@@ -21,5 +25,15 @@ public class BeanConfiguration {
             PasswordEncoderPort passwordEncoder
     ) {
         return new RegisterUserService(userRepository, passwordEncoder);
+    }
+
+    @Singleton
+    public LoginUserUseCase loginUserUseCase(
+            UserRepositoryPort userRepository,
+            PasswordEncoderPort passwordEncoder,
+            TokenProviderPort tokenProvider,
+            LoginAttemptPort loginAttempts
+    ) {
+        return new LoginUserService(userRepository, passwordEncoder, tokenProvider, loginAttempts);
     }
 }
