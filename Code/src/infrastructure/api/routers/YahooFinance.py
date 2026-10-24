@@ -3,7 +3,7 @@ import httpx
 from pydantic import ValidationError
 from fastapi import APIRouter, Depends
 from ...data_providers.schemas import YahooFinanceSchemas as YF
-from ..errors import raise_upstream_error
+from ..errors import UPSTREAM_ERROR_RESPONSES, raise_upstream_error
 
 # ==============================================================================
 # Configuración Yahoo Finance API v8 / v7 / v10 / v1
@@ -18,8 +18,8 @@ __USER_AGENT = (
 
 router = APIRouter(prefix="/yahoo", tags=["YahooFinance"])
 
-_cached_crumb: Optional[str] = None
-_cached_cookies: Optional[httpx.Cookies] = None
+_cached_crumb: str = None
+_cached_cookies: httpx.Cookies = None
 
 
 def _get_headers() -> Dict[str, str]:
@@ -30,7 +30,7 @@ def _get_headers() -> Dict[str, str]:
     }
 
 
-def _get_session_and_crumb() -> Tuple[httpx.Client, Optional[str]]:
+def _get_session_and_crumb() -> Tuple[httpx.Client, str]:
     """
     Obtiene o reutiliza la cookie de sesión y el token 'crumb' requeridos
     por los endpoints v7 (quote) y v10 (quoteSummary) de Yahoo Finance.
@@ -65,7 +65,7 @@ def _get_session_and_crumb() -> Tuple[httpx.Client, Optional[str]]:
 # 1. Chart v8 API - GET /v8/finance/chart/{symbol}
 # ==============================================================================
 
-def chart(p: YF.YahooChartParams) -> Optional[YF.YahooChartResponse]:
+def chart(p: YF.YahooChartParams) -> YF.YahooChartResponse:
     """
     Endpoint: GET /v8/finance/chart/{symbol}
     Obtiene series de tiempo continuas OHLCV y precio de cierre ajustado (Galformer & Qlib).
@@ -85,7 +85,7 @@ def chart(p: YF.YahooChartParams) -> Optional[YF.YahooChartResponse]:
             raw = response.json()
 
         if not isinstance(raw, dict):
-            return None
+            raise_upstream_error(ValueError("Unexpected upstream response shape"))
 
         return YF.YahooChartResponse.model_validate(raw)
     except (ValidationError, httpx.HTTPError, ValueError) as exc:
@@ -96,7 +96,7 @@ def chart(p: YF.YahooChartParams) -> Optional[YF.YahooChartResponse]:
 # 2. Quote v7 API - GET /v7/finance/quote?symbols=...
 # ==============================================================================
 
-def quote(p: YF.YahooQuoteParams) -> Optional[YF.YahooQuoteResponse]:
+def quote(p: YF.YahooQuoteParams) -> YF.YahooQuoteResponse:
     """
     Endpoint: GET /v7/finance/quote
     Cotizaciones multi-activo en tiempo real, múltiplos P/E, estadísticas de 52 semanas y estado del mercado.
@@ -116,7 +116,7 @@ def quote(p: YF.YahooQuoteParams) -> Optional[YF.YahooQuoteResponse]:
             client.close()
 
         if not isinstance(raw, dict):
-            return None
+            raise_upstream_error(ValueError("Unexpected upstream response shape"))
 
         return YF.YahooQuoteResponse.model_validate(raw)
     except (ValidationError, httpx.HTTPError, ValueError) as exc:
@@ -127,7 +127,7 @@ def quote(p: YF.YahooQuoteParams) -> Optional[YF.YahooQuoteResponse]:
 # 3. QuoteSummary v10 API - GET /v10/finance/quoteSummary/{symbol}?modules=...
 # ==============================================================================
 
-def quote_summary(p: YF.YahooQuoteSummaryParams) -> Optional[YF.YahooQuoteSummaryResponse]:
+def quote_summary(p: YF.YahooQuoteSummaryParams) -> YF.YahooQuoteSummaryResponse:
     """
     Endpoint: GET /v10/finance/quoteSummary/{symbol}
     Módulos de información financiera, perfil corporativo y estadísticas de valoración.
@@ -147,7 +147,7 @@ def quote_summary(p: YF.YahooQuoteSummaryParams) -> Optional[YF.YahooQuoteSummar
             client.close()
 
         if not isinstance(raw, dict):
-            return None
+            raise_upstream_error(ValueError("Unexpected upstream response shape"))
 
         return YF.YahooQuoteSummaryResponse.model_validate(raw)
     except (ValidationError, httpx.HTTPError, ValueError) as exc:
@@ -158,7 +158,7 @@ def quote_summary(p: YF.YahooQuoteSummaryParams) -> Optional[YF.YahooQuoteSummar
 # 4. Search v1 API - GET /v1/finance/search?q=...
 # ==============================================================================
 
-def search(p: YF.YahooSearchParams) -> Optional[YF.YahooSearchResponse]:
+def search(p: YF.YahooSearchParams) -> YF.YahooSearchResponse:
     """
     Endpoint: GET /v1/finance/search
     Búsqueda de tickers, empresas coincidentes y noticias financieras relevantes.
@@ -178,7 +178,7 @@ def search(p: YF.YahooSearchParams) -> Optional[YF.YahooSearchResponse]:
             raw = response.json()
 
         if not isinstance(raw, dict):
-            return None
+            raise_upstream_error(ValueError("Unexpected upstream response shape"))
 
         return YF.YahooSearchResponse.model_validate(raw)
     except (ValidationError, httpx.HTTPError, ValueError) as exc:
@@ -189,21 +189,37 @@ def search(p: YF.YahooSearchParams) -> Optional[YF.YahooSearchResponse]:
 # FastAPI Router Endpoints
 # ==============================================================================
 
-@router.get("/chart", response_model=Optional[YF.YahooChartResponse])
-def get_chart(p: YF.YahooChartParams = Depends()) -> Optional[YF.YahooChartResponse]:
+@router.get(
+    "/chart",
+    response_model=YF.YahooChartResponse,
+    responses=UPSTREAM_ERROR_RESPONSES,
+)
+def get_chart(p: YF.YahooChartParams = Depends()) -> YF.YahooChartResponse:
     return chart(p)
 
 
-@router.get("/quote", response_model=Optional[YF.YahooQuoteResponse])
-def get_quote(p: YF.YahooQuoteParams = Depends()) -> Optional[YF.YahooQuoteResponse]:
+@router.get(
+    "/quote",
+    response_model=YF.YahooQuoteResponse,
+    responses=UPSTREAM_ERROR_RESPONSES,
+)
+def get_quote(p: YF.YahooQuoteParams = Depends()) -> YF.YahooQuoteResponse:
     return quote(p)
 
 
-@router.get("/quote-summary", response_model=Optional[YF.YahooQuoteSummaryResponse])
-def get_quote_summary(p: YF.YahooQuoteSummaryParams = Depends()) -> Optional[YF.YahooQuoteSummaryResponse]:
+@router.get(
+    "/quote-summary",
+    response_model=YF.YahooQuoteSummaryResponse,
+    responses=UPSTREAM_ERROR_RESPONSES,
+)
+def get_quote_summary(p: YF.YahooQuoteSummaryParams = Depends()) -> YF.YahooQuoteSummaryResponse:
     return quote_summary(p)
 
 
-@router.get("/search", response_model=Optional[YF.YahooSearchResponse])
-def get_search(p: YF.YahooSearchParams = Depends()) -> Optional[YF.YahooSearchResponse]:
+@router.get(
+    "/search",
+    response_model=YF.YahooSearchResponse,
+    responses=UPSTREAM_ERROR_RESPONSES,
+)
+def get_search(p: YF.YahooSearchParams = Depends()) -> YF.YahooSearchResponse:
     return search(p)
