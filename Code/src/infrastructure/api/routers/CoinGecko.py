@@ -3,6 +3,7 @@ from typing import Dict, List, Optional
 import httpx
 from pydantic import ValidationError
 from fastapi import APIRouter, Depends
+from ..errors import UPSTREAM_ERROR_RESPONSES, raise_upstream_error
 from ...data_providers.schemas import CoinGeckoSchemas as CG
 
 # ==============================================================================
@@ -46,7 +47,7 @@ def _get_headers() -> Dict[str, str]:
 # ==============================================================================
 
 
-def simple_price(p: CG.SimplePriceParams) -> Optional[CG.SimplePriceResponse]:
+def simple_price(p: CG.SimplePriceParams) -> CG.SimplePriceResponse:
     """
     Endpoint: GET /simple/price
     Obtiene el precio actual, capitalización, volumen y variación en 24h.
@@ -68,14 +69,14 @@ def simple_price(p: CG.SimplePriceParams) -> Optional[CG.SimplePriceResponse]:
             raw = response.json()
 
         if not isinstance(raw, dict):
-            return None
+            raise_upstream_error(ValueError("Unexpected upstream response shape"))
 
         return {
             coin_id: CG.SimplePriceItem.model_validate(item_data)
             for coin_id, item_data in raw.items()
         }
-    except (ValidationError, httpx.HTTPError, Exception):
-        return None
+    except (ValidationError, httpx.HTTPError, ValueError) as exc:
+        raise_upstream_error(exc)
 
 
 # ==============================================================================
@@ -83,7 +84,7 @@ def simple_price(p: CG.SimplePriceParams) -> Optional[CG.SimplePriceResponse]:
 # ==============================================================================
 
 
-def coins_markets(p: CG.CoinMarketsParams) -> Optional[List[CG.CoinMarketItem]]:
+def coins_markets(p: CG.CoinMarketsParams) -> List[CG.CoinMarketItem]:
     """
     Endpoint: GET /coins/markets
     Obtiene la lista clasificada de criptomonedas con métricas de mercado.
@@ -109,11 +110,11 @@ def coins_markets(p: CG.CoinMarketsParams) -> Optional[List[CG.CoinMarketItem]]:
             raw = response.json()
 
         if not isinstance(raw, list):
-            return None
+            raise_upstream_error(ValueError("Unexpected upstream response shape"))
 
         return [CG.CoinMarketItem.model_validate(item) for item in raw]
-    except (ValidationError, httpx.HTTPError, Exception):
-        return None
+    except (ValidationError, httpx.HTTPError, ValueError) as exc:
+        raise_upstream_error(exc)
 
 
 # ==============================================================================
@@ -121,7 +122,7 @@ def coins_markets(p: CG.CoinMarketsParams) -> Optional[List[CG.CoinMarketItem]]:
 # ==============================================================================
 
 
-def market_chart(p: CG.MarketChartParams) -> Optional[CG.MarketChartResponse]:
+def market_chart(p: CG.MarketChartParams) -> CG.MarketChartResponse:
     """
     Endpoint: GET /coins/{id}/market_chart
     Obtiene la serie temporal histórica (precios, market cap, volumen).
@@ -142,11 +143,11 @@ def market_chart(p: CG.MarketChartParams) -> Optional[CG.MarketChartResponse]:
             raw = response.json()
 
         if not isinstance(raw, dict):
-            return None
+            raise_upstream_error(ValueError("Unexpected upstream response shape"))
 
         return CG.MarketChartResponse.model_validate(raw)
-    except (ValidationError, httpx.HTTPError, Exception):
-        return None
+    except (ValidationError, httpx.HTTPError, ValueError) as exc:
+        raise_upstream_error(exc)
 
 
 # ==============================================================================
@@ -154,7 +155,7 @@ def market_chart(p: CG.MarketChartParams) -> Optional[CG.MarketChartResponse]:
 # ==============================================================================
 
 
-def coin_ohlc(p: CG.CoinOHLCParams) -> Optional[List[CG.CoinOHLCCandle]]:
+def coin_ohlc(p: CG.CoinOHLCParams) -> List[CG.CoinOHLCCandle]:
     """
     Endpoint: GET /coins/{id}/ohlc
     Obtiene velas OHLC (Open, High, Low, Close) por rango de días.
@@ -172,7 +173,7 @@ def coin_ohlc(p: CG.CoinOHLCParams) -> Optional[List[CG.CoinOHLCCandle]]:
             raw = response.json()
 
         if not isinstance(raw, list):
-            return None
+            raise_upstream_error(ValueError("Unexpected upstream response shape"))
 
         return [
             CG.CoinOHLCCandle(
@@ -185,8 +186,8 @@ def coin_ohlc(p: CG.CoinOHLCParams) -> Optional[List[CG.CoinOHLCCandle]]:
             for c in raw
             if isinstance(c, (list, tuple)) and len(c) >= 5
         ]
-    except (ValidationError, httpx.HTTPError, Exception):
-        return None
+    except (ValidationError, httpx.HTTPError, ValueError) as exc:
+        raise_upstream_error(exc)
 
 
 # ==============================================================================
@@ -194,7 +195,7 @@ def coin_ohlc(p: CG.CoinOHLCParams) -> Optional[List[CG.CoinOHLCCandle]]:
 # ==============================================================================
 
 
-def global_market() -> Optional[CG.GlobalMarketResponse]:
+def global_market() -> CG.GlobalMarketResponse:
     """
     Endpoint: GET /global
     Obtiene los datos macroeconómicos agregados del mercado de criptomonedas.
@@ -208,11 +209,11 @@ def global_market() -> Optional[CG.GlobalMarketResponse]:
             raw = response.json()
 
         if not isinstance(raw, dict):
-            return None
+            raise_upstream_error(ValueError("Unexpected upstream response shape"))
 
         return CG.GlobalMarketResponse.model_validate(raw)
-    except (ValidationError, httpx.HTTPError, Exception):
-        return None
+    except (ValidationError, httpx.HTTPError, ValueError) as exc:
+        raise_upstream_error(exc)
 
 
 # ==============================================================================
@@ -220,34 +221,54 @@ def global_market() -> Optional[CG.GlobalMarketResponse]:
 # ==============================================================================
 
 
-@router.get("/simple/price", response_model=Optional[CG.SimplePriceResponse])
+@router.get(
+    "/simple/price",
+    response_model=CG.SimplePriceResponse,
+    responses=UPSTREAM_ERROR_RESPONSES,
+)
 def get_simple_price(
     p: CG.SimplePriceParams = Depends(),
-) -> Optional[CG.SimplePriceResponse]:
+) -> CG.SimplePriceResponse:
     return simple_price(p)
 
 
-@router.get("/coins/markets", response_model=Optional[List[CG.CoinMarketItem]])
+@router.get(
+    "/coins/markets",
+    response_model=List[CG.CoinMarketItem],
+    responses=UPSTREAM_ERROR_RESPONSES,
+)
 def get_coins_markets(
     p: CG.CoinMarketsParams = Depends(),
-) -> Optional[List[CG.CoinMarketItem]]:
+) -> List[CG.CoinMarketItem]:
     return coins_markets(p)
 
 
-@router.get("/coins/{id}/market_chart", response_model=Optional[CG.MarketChartResponse])
+@router.get(
+    "/coins/{id}/market_chart",
+    response_model=CG.MarketChartResponse,
+    responses=UPSTREAM_ERROR_RESPONSES,
+)
 def get_market_chart(
     p: CG.MarketChartParams = Depends(),
-) -> Optional[CG.MarketChartResponse]:
+) -> CG.MarketChartResponse:
     return market_chart(p)
 
 
-@router.get("/coins/{id}/ohlc", response_model=Optional[List[CG.CoinOHLCCandle]])
+@router.get(
+    "/coins/{id}/ohlc",
+    response_model=List[CG.CoinOHLCCandle],
+    responses=UPSTREAM_ERROR_RESPONSES,
+)
 def get_coin_ohlc(
     p: CG.CoinOHLCParams = Depends(),
-) -> Optional[List[CG.CoinOHLCCandle]]:
+) -> List[CG.CoinOHLCCandle]:
     return coin_ohlc(p)
 
 
-@router.get("/global", response_model=Optional[CG.GlobalMarketResponse])
-def get_global_market() -> Optional[CG.GlobalMarketResponse]:
+@router.get(
+    "/global",
+    response_model=CG.GlobalMarketResponse,
+    responses=UPSTREAM_ERROR_RESPONSES,
+)
+def get_global_market() -> CG.GlobalMarketResponse:
     return global_market()

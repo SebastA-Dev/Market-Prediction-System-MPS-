@@ -24,8 +24,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from fastapi import BackgroundTasks, FastAPI, HTTPException, Query, status
-from pydantic import BaseModel, Field
+from fastapi import BackgroundTasks, FastAPI, HTTPException, Query, Response, status
+from pydantic import BaseModel, Field, field_validator
+import numpy as np
 import uvicorn
 
 logger = logging.getLogger(__name__)
@@ -49,6 +50,7 @@ from src.infrastructure.api.routers import (
     Polygon as p,
     YahooFinance as yf,
 )
+from src.infrastructure.api.errors import UPSTREAM_ERROR_RESPONSES
 from src.domain.services.data_binarization.qlib_bin_dump import QlibBinaryDumpService
 from src.domain.services.data_cleaning.clean_market_data import DataCleaningService
 from src.domain.services.data_cleaning.data_acquisition import DataAcquisitionService
@@ -134,8 +136,29 @@ class IntentResponse(BaseModel):
 
 
 class PipelineRunRequest(BaseModel):
-    tickers: List[str] = Field(default=["AAPL", "MSFT", "NVDA", "BTC-USD"])
+    tickers: List[str] = Field(
+        default_factory=lambda: ["AAPL", "MSFT", "NVDA", "BTC-USD"],
+        min_length=1,
+        max_length=20,
+    )
     range_str: str = Field(default="1y")
+    epochs: int = Field(default=3, ge=1, le=100)
+
+    @field_validator("tickers")
+    @classmethod
+    def normalize_tickers(cls, tickers: List[str]) -> List[str]:
+        normalized = [ticker.strip().upper() for ticker in tickers]
+        if any(not re.fullmatch(r"[A-Z0-9.^=_-]{1,20}", ticker) for ticker in normalized):
+            raise ValueError("Cada ticker debe contener solo letras, números, punto, ^, =, _ o -.")
+        return list(dict.fromkeys(normalized))
+
+
+class PipelineRunResponse(BaseModel):
+    status: str
+    processed_count: int
+    trained_model_count: int
+    results: Dict[str, Dict[str, Any]]
+    model_training: Dict[str, Any]
 
 
 # ==============================================================================
@@ -355,10 +378,22 @@ def predict_intent(req: IntentRequest):
     )
 
 
-@app.post("/api/v1/pipeline/acquire-and-process")
+@app.post(
+    "/api/v1/pipeline/acquire-and-process",
+    response_model=PipelineRunResponse,
+    responses={**UPSTREAM_ERROR_RESPONSES, 207: {"model": PipelineRunResponse, "description": "Pipeline completado con resultados parciales"}},
+)
+@app.post(
+    "/api/v1/models/train",
+    response_model=PipelineRunResponse,
+    responses={**UPSTREAM_ERROR_RESPONSES, 207: {"model": PipelineRunResponse, "description": "Pipeline completado con resultados parciales"}},
+    tags=["Models"],
+)
 def acquire_and_process_pipeline(
-    req: PipelineRunRequest, background_tasks: BackgroundTasks
-):
+    req: PipelineRunRequest,
+    background_tasks: BackgroundTasks,
+    response: Response,
+) -> PipelineRunResponse:
     """
     Ejecuta el ciclo integral:
     - Adquisición desde APIs
@@ -367,22 +402,62 @@ def acquire_and_process_pipeline(
     - Inferencia y validación estadística
     - Persistencia en MongoDB y notificación en Redis
     """
-    results = {}
+    results: Dict[str, Dict[str, Any]] = {}
     cleaned_datasets = {}
+    master_features: List[np.ndarray] = []
+    master_labels: List[np.ndarray] = []
+    galformer_trainer = GalformerTrainer(CHECKPOINTS_DIR)
+    alpha_trainer = QlibAlphaTrainer(CHECKPOINTS_DIR)
+    provider_errors: List[HTTPException] = []
+    trained_model_count = 0
 
     for ticker in req.tickers:
         logger.info(f"[Pipeline] Adquiriendo datos para {ticker}...")
-        df_raw = DataAcquisitionService.fetch_yahoo_ohlcv(
-            ticker, range_str=req.range_str, interval="1d"
-        )
-        if df_raw is None or df_raw.empty:
-            df_raw = DataAcquisitionService.fetch_polygon_ohlcv(ticker)
+        df_raw = None
+        source = None
+        source_errors: List[Dict[str, Any]] = []
+        for source_name, fetch in (
+            ("Yahoo Finance", lambda: DataAcquisitionService.fetch_yahoo_ohlcv(
+                ticker, range_str=req.range_str, interval="1d"
+            )),
+            ("Polygon", lambda: DataAcquisitionService.fetch_polygon_ohlcv(ticker)),
+        ):
+            try:
+                candidate = fetch()
+                if candidate is not None and not candidate.empty:
+                    df_raw = candidate
+                    source = source_name
+                    break
+                source_errors.append({"source": source_name, "detail": "No se recibieron velas OHLCV"})
+            except HTTPException as exc:
+                source_errors.append({
+                    "source": source_name,
+                    "status_code": exc.status_code,
+                    "detail": exc.detail,
+                })
+
+        if df_raw is None:
+            results[ticker] = {
+                "status": "FETCH_FAILED",
+                "source_errors": source_errors,
+            }
+            provider_errors.extend(
+                HTTPException(status_code=e["status_code"], detail=str(e["detail"]))
+                for e in source_errors
+                if "status_code" in e
+            )
+            continue
 
         is_valid, df_clean, msg = DataCleaningService.clean_ohlcv_dataframe(
             df_raw, ticker=ticker
         )
         if not is_valid:
-            results[ticker] = {"status": "SKIPPED", "reason": msg}
+            results[ticker] = {
+                "status": "SKIPPED",
+                "source": source,
+                "observations": len(df_clean),
+                "reason": msg,
+            }
             continue
 
         # Formato para Qlib
@@ -396,26 +471,112 @@ def acquire_and_process_pipeline(
         if sig_payload:
             redis_pub.publish_signal(sig_payload)
 
+        checkpoint = galformer_trainer.train(
+            ticker=ticker, df_clean=df_clean, epochs=req.epochs
+        )
+        if checkpoint:
+            trained_model_count += 1
+            signal_engine.clear_model_cache(ticker)
+            galformer_status = {"status": "TRAINED", "checkpoint": checkpoint.name}
+        else:
+            galformer_status = {
+                "status": "SKIPPED",
+                "reason": "Datos insuficientes o error de entrenamiento; revisar logs",
+            }
+
+        features, targets, _ = alpha_trainer.extract_and_align(df_clean)
+        if len(features):
+            labels = np.where(targets > 0.005, 2, np.where(targets < -0.005, 0, 1))
+            valid_rows = np.isfinite(features).all(axis=1) & np.isfinite(targets)
+            if valid_rows.any():
+                master_features.append(features[valid_rows].astype(np.float32))
+                master_labels.append(labels[valid_rows].astype(np.int64))
+
         results[ticker] = {
             "status": "PROCESSED",
+            "source": source,
+            "observations": len(df_clean),
             "price": doc.raw_data.price,
             "signal": doc.statistical_validation.final_signal,
             "z_score": doc.statistical_validation.z_score,
             "p_value": doc.statistical_validation.p_value,
             "is_significant": doc.statistical_validation.is_significant,
+            "galformer": galformer_status,
+            "source_errors": source_errors,
         }
+
+    model_training: Dict[str, Any] = {
+        "galformer": {
+            "trained_count": sum(
+                result.get("galformer", {}).get("status") == "TRAINED"
+                for result in results.values()
+            )
+        },
+        "master": {"status": "SKIPPED", "reason": "No hay datos de entrenamiento"},
+        "alpha_factors": {"status": "PREPARED" if master_features else "SKIPPED"},
+    }
+    if master_features:
+        X_factors = np.concatenate(master_features)
+        Y_labels = np.concatenate(master_labels)
+        market_mean = X_factors.mean(axis=0, keepdims=True)
+        X_market = np.repeat(market_mean, len(X_factors), axis=0)
+        master_checkpoint = MASTERTrainer(CHECKPOINTS_DIR).train(
+            X_factors=X_factors,
+            X_market=X_market,
+            Y_labels=Y_labels,
+            epochs=req.epochs,
+        )
+        if master_checkpoint:
+            trained_model_count += 1
+            signal_engine.clear_model_cache()
+            model_training["master"] = {
+                "status": "TRAINED",
+                "checkpoint": master_checkpoint.name,
+                "training_rows": len(X_factors),
+            }
+        else:
+            model_training["master"] = {
+                "status": "FAILED",
+                "reason": "MASTERTrainer no pudo guardar un checkpoint; revisar logs",
+            }
 
     # Volcado binario en segundo plano a Qlib
     if cleaned_datasets:
         background_tasks.add_task(qlib_dump_service.dump_all, cleaned_datasets)
 
-    return {
-        "status": "SUCCESS",
-        "processed_count": len(
-            [r for r in results.values() if r.get("status") == "PROCESSED"]
-        ),
-        "results": results,
-    }
+    processed_count = sum(r.get("status") == "PROCESSED" for r in results.values())
+    if not processed_count:
+        if provider_errors:
+            first_error = provider_errors[0]
+            error_summary = "; ".join(
+                f"{source_error['source']} HTTP {source_error['status_code']}: {source_error['detail']}"
+                for ticker_result in results.values()
+                for source_error in ticker_result.get("source_errors", [])
+                if "status_code" in source_error
+            )
+            raise HTTPException(
+                status_code=first_error.status_code,
+                detail=(
+                    "No se pudo adquirir OHLCV para los tickers solicitados. "
+                    f"Errores de proveedores: {error_summary}"
+                ),
+            )
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Ningún ticker produjo datos OHLCV suficientes para el pipeline.",
+        )
+
+    run_status = "SUCCESS"
+    if processed_count < len(req.tickers) or trained_model_count == 0:
+        run_status = "PARTIAL"
+        response.status_code = status.HTTP_207_MULTI_STATUS
+    return PipelineRunResponse(
+        status=run_status,
+        processed_count=processed_count,
+        trained_model_count=trained_model_count,
+        results=results,
+        model_training=model_training,
+    )
 
 
 def main():
