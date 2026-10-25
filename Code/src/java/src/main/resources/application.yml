@@ -1,6 +1,11 @@
+# ==============================================================================
+# MPS (Market Prediction System) - Configuración Principal de la Aplicación
+# Procesado nativamente por Micronaut y snakeyaml (pom.xml)
+# ==============================================================================
+
 micronaut:
   application:
-    name: java
+    name: mps-users-service
   session:
     http:
       cookie: true
@@ -17,7 +22,7 @@ micronaut:
         signatures:
           secret:
             generator:
-              secret: ${JWT_GENERATOR_SIGNATURE_SECRET:pleaseChangeThisSecretForANewOne}
+              secret: ${JWT_GENERATOR_SIGNATURE_SECRET:dev-secret-key-must-be-at-least-32-chars-long!}
               jws-algorithm: HS256
     intercept-url-map:
       - pattern: /api/v1/users/**
@@ -45,6 +50,10 @@ micronaut:
         paths: classpath:META-INF/schemas
         mapping: /schemas/**
 
+# ==============================================================================
+# Configuración del Pool HikariCP y Conexión PostgreSQL (RNF-17, RNF-25)
+# Mapea las variables definidas en .env con valores por defecto seguros
+# ==============================================================================
 datasources:
   default:
     url: ${JDBC_URL:`jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:mps_db}`}
@@ -54,19 +63,25 @@ datasources:
     db-type: postgres
     dialect: POSTGRES
     schema-generate: NONE
-    maximum-pool-size: 20
-    connection-timeout: 250
+    maximum-pool-size: ${DATASOURCES_DEFAULT_MAXIMUM_POOL_SIZE:20}
+    connection-timeout: ${DATASOURCES_DEFAULT_CONNECTION_TIMEOUT:250}
 
+# ==============================================================================
+# Mapeo JPA y Persistencia (Micronaut Data / Hibernate)
+# ==============================================================================
 jpa:
   default:
     entity-scan:
-      packages: 'com.mps.infrastructure.adapters.outbound.persistence.entity'
+      packages: "com.mps.infrastructure.adapters.outbound.persistence.entity"
     properties:
       hibernate:
         hbm2ddl:
           auto: update
         show_sql: false
 
+# ==============================================================================
+# Parámetros de Seguridad de Inicio de Sesión (RNF-26, UC-09a)
+# ==============================================================================
 mps:
   security:
     login:
