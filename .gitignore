@@ -64,3 +64,7 @@ htmlcov/
 *.log
 *.sqlite
 *.sqlite3
+
+*.pem
+
+*.pem

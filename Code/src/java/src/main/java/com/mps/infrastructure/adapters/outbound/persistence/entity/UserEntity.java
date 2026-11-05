@@ -14,7 +14,7 @@ import java.util.UUID;
  * Mapea la tabla 'users' conforme al MER del sistema (UMLBaseDeDatos.drawio).
  */
 @Entity
-@Table(name = "users")
+@Table(name = "\"user\"")
 public class UserEntity {
 
     @Id
