@@ -43,7 +43,14 @@ class SignalGenerationEngine:
     """
 
     def __init__(self, checkpoints_dir: Optional[Path] = None):
-        self.checkpoints_dir = Path(checkpoints_dir) if checkpoints_dir else Path("./checkpoints")
+        if checkpoints_dir:
+            self.checkpoints_dir = Path(checkpoints_dir)
+        else:
+            self.checkpoints_dir = (
+                Path(__file__).resolve().parent.parent
+                / "models_training"
+                / "checkpoints"
+            )
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self._galformer_models: Dict[str, PyTorchGalformer] = {}
         self._master_model: Optional[PyTorchMASTER] = None

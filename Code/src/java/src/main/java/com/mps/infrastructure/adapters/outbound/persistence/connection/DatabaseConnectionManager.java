@@ -85,7 +85,7 @@ public record DatabaseConnectionManager(DataSource dataSource) {
         String actualUser = meta.getUserName();
         String dbProduct = meta.getDatabaseProductName() + " " + meta.getDatabaseProductVersion();
         String driver = meta.getDriverName() + " " + meta.getDriverVersion();
-        boolean isSsl = actualUrl != null && (actualUrl.toLowerCase().contains("ssl=true") || actualUrl.toLowerCase().contains("sslmode=require"));
+        boolean isSsl = actualUrl != null && (actualUrl.toLowerCase().contains("ssl=true") || actualUrl.toLowerCase().contains("sslmode="));
 
         LOG.info("==================================================================");
         LOG.info(" CONEXIÓN A BASE DE DATOS ESTABLECIDA Y VERIFICADA EXITOSAMENTE ");

@@ -12,9 +12,23 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-from src.domain.services.data_cleaning.data_acquisition import DataAcquisitionService
-from src.domain.services.data_cleaning.clean_market_data import DataCleaningService
-from src.domain.services.data_binarization.qlib_bin_dump import QlibBinaryDumpService
+import sys
+
+# Asegurar que las rutas raíz estén en sys.path
+_CURRENT_DIR = Path(__file__).resolve().parent
+_PYTHON_ROOT = _CURRENT_DIR.parent.parent.parent
+for _p in [str(_PYTHON_ROOT), str(_PYTHON_ROOT.parent), str(_PYTHON_ROOT.parent.parent)]:
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
+
+try:
+    from ..data_cleaning.data_acquisition import DataAcquisitionService
+    from ..data_cleaning.clean_market_data import DataCleaningService
+    from ..data_binarization.qlib_bin_dump import QlibBinaryDumpService
+except (ImportError, ValueError):
+    from domain.services.data_cleaning.data_acquisition import DataAcquisitionService
+    from domain.services.data_cleaning.clean_market_data import DataCleaningService
+    from domain.services.data_binarization.qlib_bin_dump import QlibBinaryDumpService
 
 
 class QlibDataPreparationService:

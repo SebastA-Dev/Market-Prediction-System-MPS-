@@ -14,6 +14,7 @@ Orquesta:
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 import os
+import sys
 from pathlib import Path
 import re
 import time
@@ -29,37 +30,92 @@ from pydantic import BaseModel, Field
 import uvicorn
 
 logger = logging.getLogger(__name__)
-# httpx logs complete URLs at INFO, which can expose API keys passed as query params.
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
-# Modelos y servicios del dominio
-from src.domain.models.market import (
-    IntentPredictionLog,
-    IntentType,
-    MarketSignalPayload,
-    MarketTickDocument,
-    SignalType,
-)
+# Asegurar que la raíz de python (Code/src/python) esté en sys.path
+_CURRENT_DIR = Path(__file__).resolve().parent
+_PYTHON_ROOT = _CURRENT_DIR.parent.parent
+for _p in [
+    str(_PYTHON_ROOT),
+    str(_PYTHON_ROOT.parent),
+    str(_PYTHON_ROOT.parent.parent),
+]:
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
 
-from src.infrastructure.api.routers import (
-    CoinGecko as cg,
-    Finnhub as fn,
-    FMP as f,
-    FRED as fr,
-    Polygon as p,
-    YahooFinance as yf,
-)
-from src.domain.services.data_binarization.qlib_bin_dump import QlibBinaryDumpService
-from src.domain.services.data_cleaning.clean_market_data import DataCleaningService
-from src.domain.services.data_cleaning.data_acquisition import DataAcquisitionService
-from src.domain.services.inference.risk_management import RiskManagementService
-from src.domain.services.inference.signal_generator import SignalGenerationEngine
-from src.domain.services.inference.statistical_validator import StatisticalValidator
-from src.domain.services.models_training.train_galformer import GalformerTrainer
-from src.domain.services.models_training.train_master import MASTERTrainer
-from src.domain.services.models_training.train_qlib_alpha import QlibAlphaTrainer
-from src.domain.services.storage.mongo_repository import MongoMarketRepository
-from src.domain.services.storage.redis_publisher import RedisSignalPublisher
+# 1. Modelos del dominio (soporte relativo y absoluto)
+try:
+    from ..models.market import (
+        IntentPredictionLog,
+        IntentType,
+        MarketSignalPayload,
+        MarketTickDocument,
+        SignalType,
+    )
+except (ImportError, ValueError):
+    from domain.models.market import (
+        IntentPredictionLog,
+        IntentType,
+        MarketSignalPayload,
+        MarketTickDocument,
+        SignalType,
+    )
+
+# 2. Servicios del dominio (soporte relativo y absoluto)
+try:
+    from .data_binarization.qlib_bin_dump import QlibBinaryDumpService
+    from .data_cleaning.clean_market_data import DataCleaningService
+    from .data_cleaning.data_acquisition import DataAcquisitionService
+    from .inference.risk_management import RiskManagementService
+    from .inference.signal_generator import SignalGenerationEngine
+    from .inference.statistical_validator import StatisticalValidator
+    from .models_training.train_galformer import GalformerTrainer
+    from .models_training.train_master import MASTERTrainer
+    from .models_training.train_qlib_alpha import QlibAlphaTrainer
+    from .storage.mongo_repository import MongoMarketRepository
+    from .storage.redis_publisher import RedisSignalPublisher
+except (ImportError, ValueError):
+    from domain.services.data_binarization.qlib_bin_dump import QlibBinaryDumpService
+    from domain.services.data_cleaning.clean_market_data import DataCleaningService
+    from domain.services.data_cleaning.data_acquisition import DataAcquisitionService
+    from domain.services.inference.risk_management import RiskManagementService
+    from domain.services.inference.signal_generator import SignalGenerationEngine
+    from domain.services.inference.statistical_validator import StatisticalValidator
+    from domain.services.models_training.train_galformer import GalformerTrainer
+    from domain.services.models_training.train_master import MASTERTrainer
+    from domain.services.models_training.train_qlib_alpha import QlibAlphaTrainer
+    from domain.services.storage.mongo_repository import MongoMarketRepository
+    from domain.services.storage.redis_publisher import RedisSignalPublisher
+
+# 3. Routers de Infraestructura (soporte absoluto y relativo)
+try:
+    from infrastructure.api.routers import (
+        CoinGecko as cg,
+        Finnhub as fn,
+        FMP as f,
+        FRED as fr,
+        Polygon as p,
+        YahooFinance as yf,
+    )
+except (ImportError, ValueError):
+    try:
+        from ...infrastructure.api.routers import (
+            CoinGecko as cg,
+            Finnhub as fn,
+            FMP as f,
+            FRED as fr,
+            Polygon as p,
+            YahooFinance as yf,
+        )
+    except (ImportError, ValueError):
+        from src.infrastructure.api.routers import (
+            CoinGecko as cg,
+            Finnhub as fn,
+            FMP as f,
+            FRED as fr,
+            Polygon as p,
+            YahooFinance as yf,
+        )
 
 # Configuración de rutas
 BASE_DIR = Path(__file__).resolve().parent
@@ -422,7 +478,7 @@ def main():
     """Punto de entrada de consola para iniciar el servidor de servicios analíticos."""
     port = int(os.getenv("PORT", "8000"))
     logger.info(f"Iniciando servidor MPS en http://0.0.0.0:{port}")
-    uvicorn.run("src.domain.services.main:app", host="0.0.0.0", port=port, reload=True)
+    uvicorn.run("domain.services.main:app", host="0.0.0.0", port=port, reload=True)
 
 
 if __name__ == "__main__":

@@ -4,6 +4,8 @@ Consume los routers y clientes de infrastructure (YahooFinance, Polygon, Finnhub
 para descargar series históricas y datos macroeconómicos requeridos por el pipeline analítico.
 """
 
+import sys
+from pathlib import Path
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 import logging
@@ -11,23 +13,66 @@ import pandas as pd
 
 logger = logging.getLogger(__name__)
 
-# Importación de infraestructura
-from src.infrastructure.api.routers import (
-    YahooFinance as YF_router,
-    Polygon as PG_router,
-    Finnhub as FH_router,
-    FMP as FMP_router,
-    FRED as FRED_router,
-    CoinGecko as CG_router,
-)
-from src.infrastructure.data_providers.schemas import (
-    YahooFinanceSchemas as YF_schemas,
-    PolygonSchemas as PG_schemas,
-    FinnhubSchema as FH_schemas,
-    FMPSchemas as FMP_schemas,
-    FREDSchemas as FRED_schemas,
-    CoinGeckoSchemas as CG_schemas,
-)
+# Asegurar que las rutas raíz estén en sys.path
+_CURRENT_DIR = Path(__file__).resolve().parent
+_PYTHON_ROOT = _CURRENT_DIR.parent.parent.parent
+for _p in [str(_PYTHON_ROOT), str(_PYTHON_ROOT.parent), str(_PYTHON_ROOT.parent.parent)]:
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
+
+# Importación de infraestructura (soporte absoluto, relativo y heredado)
+try:
+    from infrastructure.api.routers import (
+        YahooFinance as YF_router,
+        Polygon as PG_router,
+        Finnhub as FH_router,
+        FMP as FMP_router,
+        FRED as FRED_router,
+        CoinGecko as CG_router,
+    )
+    from infrastructure.data_providers.schemas import (
+        YahooFinanceSchemas as YF_schemas,
+        PolygonSchemas as PG_schemas,
+        FinnhubSchema as FH_schemas,
+        FMPSchemas as FMP_schemas,
+        FREDSchemas as FRED_schemas,
+        CoinGeckoSchemas as CG_schemas,
+    )
+except (ImportError, ValueError):
+    try:
+        from ....infrastructure.api.routers import (
+            YahooFinance as YF_router,
+            Polygon as PG_router,
+            Finnhub as FH_router,
+            FMP as FMP_router,
+            FRED as FRED_router,
+            CoinGecko as CG_router,
+        )
+        from ....infrastructure.data_providers.schemas import (
+            YahooFinanceSchemas as YF_schemas,
+            PolygonSchemas as PG_schemas,
+            FinnhubSchema as FH_schemas,
+            FMPSchemas as FMP_schemas,
+            FREDSchemas as FRED_schemas,
+            CoinGeckoSchemas as CG_schemas,
+        )
+    except (ImportError, ValueError):
+        from src.infrastructure.api.routers import (
+            YahooFinance as YF_router,
+            Polygon as PG_router,
+            Finnhub as FH_router,
+            FMP as FMP_router,
+            FRED as FRED_router,
+            CoinGecko as CG_router,
+        )
+        from src.infrastructure.data_providers.schemas import (
+            YahooFinanceSchemas as YF_schemas,
+            PolygonSchemas as PG_schemas,
+            FinnhubSchema as FH_schemas,
+            FMPSchemas as FMP_schemas,
+            FREDSchemas as FRED_schemas,
+            CoinGeckoSchemas as CG_schemas,
+        )
 
 
 class DataAcquisitionService:

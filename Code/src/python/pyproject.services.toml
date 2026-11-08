@@ -31,11 +31,12 @@ dependencies = [
     "motor>=3.6.0",
     "pymongo>=4.9.0",
 
-    # Procesamiento Matemático y Validación Estadística (Z-test, Alpha Factors)
+    # Procesamiento Matemático, Aprendizaje Automático y Validación Estadística
     "numpy>=2.1.0",
     "scipy>=1.14.0",
     "pandas>=2.2.0",
     "statsmodels>=0.14.4",
+    "torch>=2.0.0",
 
     # Utilidades de Entorno
     "python-dotenv>=1.0.1",
@@ -51,4 +52,4 @@ dev = [
 ]
 
 [tool.setuptools]
-package-dir = {"" = "src"}
+package-dir = {"" = "."}

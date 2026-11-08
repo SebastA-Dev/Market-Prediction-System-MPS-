@@ -1,6 +1,28 @@
 services:
   # ==============================================================================
-  # MongoDB — Almacenamiento Documental (market_ticks_and_features e INTENT_PREDICTION_LOG)
+  # c. Servicio de Mensajería Reactiva y Pub/Sub (Redis)
+  # Canal 'market_signals' para alertas en tiempo real y desacoplamiento
+  # ==============================================================================
+  redis:
+    image: redis:7.2-alpine
+    container_name: mps_redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    networks:
+      - mps_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==============================================================================
+  # d. Base de Datos NoSQL Documental (MongoDB)
+  # Almacenamiento append-only: market_ticks_and_features e INTENT_PREDICTION_LOG
   # ==============================================================================
   mongodb:
     image: mongo:7.0
@@ -9,9 +31,11 @@ services:
     ports:
       - "27017:27017"
     environment:
-      MONGO_INITDB_DATABASE: mps_market_db
+      MONGO_INITDB_DATABASE: ${MONGO_DB:-mps_market_db}
     volumes:
       - mongo_data:/data/db
+    networks:
+      - mps_network
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 10s
@@ -19,25 +43,84 @@ services:
       retries: 5
 
   # ==============================================================================
-  # Redis — Bus de Mensajería Reactiva (Canal 'market_signals')
+  # a. Servicio Java (Micronaut - Autenticación, Usuarios y Alertas)
+  # Se conecta a la base de datos relacional alojada en AWS (RDS PostgreSQL)
   # ==============================================================================
-  redis:
-    image: redis:7.2-alpine
-    container_name: mps_redis
+  java-service:
+    build:
+      context: ./src/java
+      dockerfile: Dockerfile
+    container_name: mps_java_service
     restart: unless-stopped
     ports:
-      - "6379:6379"
-    command: ["redis-server", "--appendonly", "yes"]
+      - "8080:8080"
+    environment:
+      # Conexión a Base de Datos Relacional en AWS (RDS PostgreSQL)
+      DB_HOST: ${DB_HOST:-localhost}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_NAME: ${DB_NAME:-mps_db}
+      JDBC_USER: ${JDBC_USER:-postgres}
+      JDBC_PASSWORD: ${JDBC_PASSWORD:-postgres}
+      DB_SSL_MODE: ${DB_SSL_MODE:-}
+      DB_SSL_ROOT_CERT: ${DB_SSL_ROOT_CERT:-}
+      JDBC_URL: ${JDBC_URL:-}
+
+      # Parámetros de Pool y Rendimiento
+      DATASOURCES_DEFAULT_MAXIMUM_POOL_SIZE: ${DATASOURCES_DEFAULT_MAXIMUM_POOL_SIZE:-20}
+      DATASOURCES_DEFAULT_CONNECTION_TIMEOUT: ${DATASOURCES_DEFAULT_CONNECTION_TIMEOUT:-250}
+
+      # Seguridad JWT
+      JWT_GENERATOR_SIGNATURE_SECRET: ${JWT_GENERATOR_SIGNATURE_SECRET:-dev-secret-key-must-be-at-least-32-chars-long!}
+      JWT_ACCESS_TOKEN_EXPIRATION: ${JWT_ACCESS_TOKEN_EXPIRATION:-3600}
     volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      # Monta la carpeta Code para que el contenedor pueda leer certificados (.pem) y .env
+      - ./:/app/host:ro
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - mps_network
+
+  # ==============================================================================
+  # b. Servicio Python (FastAPI - Pipeline Analítico, Modelos ML & Inferencia)
+  # Se conecta al bus Redis y a MongoDB (local o en AWS vía MONGO_URI)
+  # ==============================================================================
+  python-service:
+    build:
+      context: ./src/python
+      dockerfile: Dockerfile
+    container_name: mps_python_service
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      PORT: 8000
+      # Conexión al servicio de mensajería interno
+      REDIS_HOST: ${REDIS_HOST:-redis}
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      # Conexión a MongoDB (por defecto al contenedor mongodb de la red docker)
+      MONGO_URI: ${MONGO_URI:-mongodb://mongodb:27017}
+      MONGO_DB: ${MONGO_DB:-mps_market_db}
+      # Llaves de Proveedores de Datos Financieros
+      COINGECKO_APIKEY: ${COINGECKO_APIKEY:-}
+      FINNHUB_APIKEY: ${FINNHUB_APIKEY:-}
+      FMP_APIKEY: ${FMP_APIKEY:-}
+      FRED_APIKEY: ${FRED_APIKEY:-}
+      POLYGON_APIKEY: ${POLYGON_APIKEY:-}
+    depends_on:
+      redis:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    networks:
+      - mps_network
+
+networks:
+  mps_network:
+    driver: bridge
 
 volumes:
-  mongo_data:
-    driver: local
   redis_data:
+    driver: local
+  mongo_data:
     driver: local

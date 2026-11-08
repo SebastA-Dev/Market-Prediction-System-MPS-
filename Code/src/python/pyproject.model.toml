@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "mps-model-galformer"
 version = "0.1.0"
 description = "Galformer: A Transformer with Generative Decoding and a Hybrid Loss Function for Multi-Step Stock Market Index Prediction"
-readme = "src/domain/services/Galformer-Improved-Transformer-for-Time-Series-Prediction/README.md"
+readme = "domain/services/Galformer-Improved-Transformer-for-Time-Series-Prediction/README.md"
 requires-python = ">=3.7, <3.8"
 license = { text = "MIT" }
 authors = [
@@ -28,4 +28,4 @@ dev = [
 ]
 
 [tool.setuptools]
-package-dir = {"" = "src"}
+package-dir = {"" = "."}
