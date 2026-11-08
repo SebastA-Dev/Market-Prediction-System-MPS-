@@ -4,18 +4,14 @@ Consume los routers y clientes de infrastructure (YahooFinance, Polygon, Finnhub
 para descargar series históricas y datos macroeconómicos requeridos por el pipeline analítico.
 """
 
-from Code.src.python.domain.services.Qlib.DataPreparation import logger
-
-import sys
-from pathlib import Path
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 import logging
 import pandas as pd
 from fastapi import HTTPException
 
-from Code.src.python.infrastructure.api.errors import raise_upstream_error
-from Code.src.python.infrastructure.api.routers import (
+from infrastructure.api.errors import raise_upstream_error
+from infrastructure.api.routers import (
     YahooFinance as YF_router,
     Polygon as PG_router,
     Finnhub as FH_router,
@@ -23,7 +19,7 @@ from Code.src.python.infrastructure.api.routers import (
     FRED as FRED_router,
     CoinGecko as CG_router,
 )
-from Code.src.python.infrastructure.data_providers.schemas import (
+from infrastructure.data_providers.schemas import (
     YahooFinanceSchemas as YF_schemas,
     PolygonSchemas as PG_schemas,
     FinnhubSchema as FH_schemas,
@@ -31,6 +27,8 @@ from Code.src.python.infrastructure.data_providers.schemas import (
     FREDSchemas as FRED_schemas,
     CoinGeckoSchemas as CG_schemas,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class DataAcquisitionService:
