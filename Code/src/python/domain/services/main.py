@@ -30,11 +30,10 @@ import numpy as np
 import uvicorn
 
 logger = logging.getLogger(__name__)
-# httpx logs complete URLs at INFO, which can expose API keys passed as query params.
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
 # Modelos y servicios del dominio
-from src.domain.models.market import (
+from Code.src.python.domain.models.market import (
     IntentPredictionLog,
     IntentType,
     MarketSignalPayload,
@@ -42,7 +41,7 @@ from src.domain.models.market import (
     SignalType,
 )
 
-from src.infrastructure.api.routers import (
+from Code.src.python.infrastructure.api.routers import (
     CoinGecko as cg,
     Finnhub as fn,
     FMP as f,
@@ -50,18 +49,36 @@ from src.infrastructure.api.routers import (
     Polygon as p,
     YahooFinance as yf,
 )
-from src.infrastructure.api.errors import UPSTREAM_ERROR_RESPONSES
-from src.domain.services.data_binarization.qlib_bin_dump import QlibBinaryDumpService
-from src.domain.services.data_cleaning.clean_market_data import DataCleaningService
-from src.domain.services.data_cleaning.data_acquisition import DataAcquisitionService
-from src.domain.services.inference.risk_management import RiskManagementService
-from src.domain.services.inference.signal_generator import SignalGenerationEngine
-from src.domain.services.inference.statistical_validator import StatisticalValidator
-from src.domain.services.models_training.train_galformer import GalformerTrainer
-from src.domain.services.models_training.train_master import MASTERTrainer
-from src.domain.services.models_training.train_qlib_alpha import QlibAlphaTrainer
-from src.domain.services.storage.mongo_repository import MongoMarketRepository
-from src.domain.services.storage.redis_publisher import RedisSignalPublisher
+from Code.src.python.infrastructure.api.errors import UPSTREAM_ERROR_RESPONSES
+from Code.src.python.domain.services.data_binarization.qlib_bin_dump import (
+    QlibBinaryDumpService,
+)
+from Code.src.python.domain.services.data_cleaning.clean_market_data import (
+    DataCleaningService,
+)
+from Code.src.python.domain.services.data_cleaning.data_acquisition import (
+    DataAcquisitionService,
+)
+from Code.src.python.domain.services.inference.risk_management import (
+    RiskManagementService,
+)
+from Code.src.python.domain.services.inference.signal_generator import (
+    SignalGenerationEngine,
+)
+from Code.src.python.domain.services.inference.statistical_validator import (
+    StatisticalValidator,
+)
+from Code.src.python.domain.services.models_training.train_galformer import (
+    GalformerTrainer,
+)
+from Code.src.python.domain.services.models_training.train_master import MASTERTrainer
+from Code.src.python.domain.services.models_training.train_qlib_alpha import (
+    QlibAlphaTrainer,
+)
+from Code.src.python.domain.services.storage.mongo_repository import (
+    MongoMarketRepository,
+)
+from Code.src.python.domain.services.storage.redis_publisher import RedisSignalPublisher
 
 # Configuración de rutas
 BASE_DIR = Path(__file__).resolve().parent
@@ -298,7 +315,7 @@ def predict_intent(req: IntentRequest):
             df_raw = DataAcquisitionService.fetch_polygon_ohlcv(sym)
 
         is_valid, df_clean, msg = DataCleaningService.clean_ohlcv_dataframe(
-            df_raw, ticker=sym
+            df_raw, ticker=sym  # ty: ignore[invalid-argument-type]
         )  # ty: ignore[invalid-argument-type]
         if not is_valid:
             continue

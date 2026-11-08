@@ -4,6 +4,8 @@ Consume los routers y clientes de infrastructure (YahooFinance, Polygon, Finnhub
 para descargar series históricas y datos macroeconómicos requeridos por el pipeline analítico.
 """
 
+from Code.src.python.domain.services.Qlib.DataPreparation import logger
+
 import sys
 from pathlib import Path
 from datetime import datetime, timedelta
@@ -11,70 +13,24 @@ from typing import Dict, List, Optional
 import logging
 import pandas as pd
 from fastapi import HTTPException
-from src.infrastructure.api.errors import raise_upstream_error
 
-logger = logging.getLogger(__name__)
-
-# Asegurar que las rutas raíz estén en sys.path
-_CURRENT_DIR = Path(__file__).resolve().parent
-_PYTHON_ROOT = _CURRENT_DIR.parent.parent.parent
-for _p in [str(_PYTHON_ROOT), str(_PYTHON_ROOT.parent), str(_PYTHON_ROOT.parent.parent)]:
-    if _p not in sys.path:
-        sys.path.insert(0, _p)
-
-# Importación de infraestructura (soporte absoluto, relativo y heredado)
-try:
-    from infrastructure.api.routers import (
-        YahooFinance as YF_router,
-        Polygon as PG_router,
-        Finnhub as FH_router,
-        FMP as FMP_router,
-        FRED as FRED_router,
-        CoinGecko as CG_router,
-    )
-    from infrastructure.data_providers.schemas import (
-        YahooFinanceSchemas as YF_schemas,
-        PolygonSchemas as PG_schemas,
-        FinnhubSchema as FH_schemas,
-        FMPSchemas as FMP_schemas,
-        FREDSchemas as FRED_schemas,
-        CoinGeckoSchemas as CG_schemas,
-    )
-except (ImportError, ValueError):
-    try:
-        from ....infrastructure.api.routers import (
-            YahooFinance as YF_router,
-            Polygon as PG_router,
-            Finnhub as FH_router,
-            FMP as FMP_router,
-            FRED as FRED_router,
-            CoinGecko as CG_router,
-        )
-        from ....infrastructure.data_providers.schemas import (
-            YahooFinanceSchemas as YF_schemas,
-            PolygonSchemas as PG_schemas,
-            FinnhubSchema as FH_schemas,
-            FMPSchemas as FMP_schemas,
-            FREDSchemas as FRED_schemas,
-            CoinGeckoSchemas as CG_schemas,
-        )
-    except (ImportError, ValueError):
-        from src.infrastructure.api.routers import (
-            YahooFinance as YF_router,
-            Polygon as PG_router,
-            Finnhub as FH_router,
-            FMP as FMP_router,
-            FRED as FRED_router,
-            CoinGecko as CG_router,
-        )
-        from src.infrastructure.data_providers.schemas import (
-            YahooFinanceSchemas as YF_schemas,
-            PolygonSchemas as PG_schemas,
-            FinnhubSchema as FH_schemas,
-            FMPSchemas as FMP_schemas,
-            FREDSchemas as FRED_schemas,
-            CoinGeckoSchemas as CG_schemas,
-        )
+from Code.src.python.infrastructure.api.errors import raise_upstream_error
+from Code.src.python.infrastructure.api.routers import (
+    YahooFinance as YF_router,
+    Polygon as PG_router,
+    Finnhub as FH_router,
+    FMP as FMP_router,
+    FRED as FRED_router,
+    CoinGecko as CG_router,
+)
+from Code.src.python.infrastructure.data_providers.schemas import (
+    YahooFinanceSchemas as YF_schemas,
+    PolygonSchemas as PG_schemas,
+    FinnhubSchema as FH_schemas,
+    FMPSchemas as FMP_schemas,
+    FREDSchemas as FRED_schemas,
+    CoinGeckoSchemas as CG_schemas,
+)
 
 
 class DataAcquisitionService:
@@ -84,7 +40,9 @@ class DataAcquisitionService:
     """
 
     @staticmethod
-    def fetch_yahoo_ohlcv(symbol: str, range_str: str = "2y", interval: str = "1d") -> Optional[pd.DataFrame]:
+    def fetch_yahoo_ohlcv(
+        symbol: str, range_str: str = "2y", interval: str = "1d"
+    ) -> Optional[pd.DataFrame]:
         """
         Descarga velas OHLCV desde Yahoo Finance.
         Retorna DataFrame con columnas: [Date, Open, High, Low, Close, Adj Close, Volume]
@@ -98,7 +56,9 @@ class DataAcquisitionService:
             )
             resp = YF_router.chart(params)
             if not resp or not resp.chart or not resp.chart.result:
-                logger.warning(f"[DataAcquisition] No se obtuvieron datos de Yahoo Finance para {symbol}")
+                logger.warning(
+                    f"[DataAcquisition] No se obtuvieron datos de Yahoo Finance para {symbol}"
+                )
                 return None
 
             result = resp.chart.result[0]
@@ -108,22 +68,28 @@ class DataAcquisitionService:
             if result.indicators.adjclose and len(result.indicators.adjclose) > 0:
                 adj_close_list = result.indicators.adjclose[0].adjclose
 
-            df = pd.DataFrame({
-                "Date": pd.to_datetime(timestamps, unit="s"),
-                "Open": indicators.open,
-                "High": indicators.high,
-                "Low": indicators.low,
-                "Close": indicators.close,
-                "Adj Close": adj_close_list if adj_close_list else indicators.close,
-                "Volume": indicators.volume,
-            })
+            df = pd.DataFrame(
+                {
+                    "Date": pd.to_datetime(timestamps, unit="s"),
+                    "Open": indicators.open,
+                    "High": indicators.high,
+                    "Low": indicators.low,
+                    "Close": indicators.close,
+                    "Adj Close": adj_close_list if adj_close_list else indicators.close,
+                    "Volume": indicators.volume,
+                }
+            )
             df = df.dropna(subset=["Close"]).reset_index(drop=True)
-            logger.info(f"[DataAcquisition] Yahoo Finance: {len(df)} registros descargados para {symbol}")
+            logger.info(
+                f"[DataAcquisition] Yahoo Finance: {len(df)} registros descargados para {symbol}"
+            )
             return df
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"[DataAcquisition] Error consultando Yahoo Finance para {symbol}: {e}")
+            logger.error(
+                f"[DataAcquisition] Error consultando Yahoo Finance para {symbol}: {e}"
+            )
             raise_upstream_error(e)
 
     @staticmethod
@@ -141,7 +107,9 @@ class DataAcquisitionService:
             if not to_date:
                 to_date = datetime.now().strftime("%Y-%m-%d")
             if not from_date:
-                from_date = (datetime.now() - timedelta(days=365 * 2)).strftime("%Y-%m-%d")
+                from_date = (datetime.now() - timedelta(days=365 * 2)).strftime(
+                    "%Y-%m-%d"
+                )
 
             params = PG_schemas.AggregatesParams(
                 ticker=ticker,
@@ -155,27 +123,35 @@ class DataAcquisitionService:
             )
             resp = PG_router.aggregates(params)
             if not resp or not resp.results:
-                logger.warning(f"[DataAcquisition] No se obtuvieron datos de Polygon para {ticker}")
+                logger.warning(
+                    f"[DataAcquisition] No se obtuvieron datos de Polygon para {ticker}"
+                )
                 return None
 
             records = []
             for bar in resp.results:
-                records.append({
-                    "Date": pd.to_datetime(bar.t, unit="ms"),
-                    "Open": bar.o,
-                    "High": bar.h,
-                    "Low": bar.l,
-                    "Close": bar.c,
-                    "Adj Close": bar.c,
-                    "Volume": bar.v,
-                })
+                records.append(
+                    {
+                        "Date": pd.to_datetime(bar.t, unit="ms"),
+                        "Open": bar.o,
+                        "High": bar.h,
+                        "Low": bar.l,
+                        "Close": bar.c,
+                        "Adj Close": bar.c,
+                        "Volume": bar.v,
+                    }
+                )
             df = pd.DataFrame(records)
-            logger.info(f"[DataAcquisition] Polygon.io: {len(df)} registros descargados para {ticker}")
+            logger.info(
+                f"[DataAcquisition] Polygon.io: {len(df)} registros descargados para {ticker}"
+            )
             return df
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"[DataAcquisition] Error consultando Polygon para {ticker}: {e}")
+            logger.error(
+                f"[DataAcquisition] Error consultando Polygon para {ticker}: {e}"
+            )
             raise_upstream_error(e)
 
     @staticmethod
@@ -189,11 +165,15 @@ class DataAcquisitionService:
                 return [item.model_dump() for item in items]
             return None
         except Exception as e:
-            logger.error(f"[DataAcquisition] Error consultando FMP sector_performance: {e}")
+            logger.error(
+                f"[DataAcquisition] Error consultando FMP sector_performance: {e}"
+            )
             raise_upstream_error(e)
 
     @staticmethod
-    def fetch_macro_series(series_id: str = "GDP", limit: int = 100) -> Optional[pd.DataFrame]:
+    def fetch_macro_series(
+        series_id: str = "GDP", limit: int = 100
+    ) -> Optional[pd.DataFrame]:
         """
         Descarga indicadores macroeconómicos desde FRED (ej: VIX, DGS10, GDP, CPI).
         """
@@ -208,11 +188,21 @@ class DataAcquisitionService:
                 return None
 
             records = [
-                {"Date": pd.to_datetime(obs.date), "Value": pd.to_numeric(obs.value, errors="coerce")}
+                {
+                    "Date": pd.to_datetime(obs.date),
+                    "Value": pd.to_numeric(obs.value, errors="coerce"),
+                }
                 for obs in resp.observations
             ]
-            df = pd.DataFrame(records).dropna().sort_values("Date").reset_index(drop=True)
+            df = (
+                pd.DataFrame(records)
+                .dropna()
+                .sort_values("Date")
+                .reset_index(drop=True)
+            )
             return df
         except Exception as e:
-            logger.error(f"[DataAcquisition] Error consultando FRED series {series_id}: {e}")
+            logger.error(
+                f"[DataAcquisition] Error consultando FRED series {series_id}: {e}"
+            )
             raise_upstream_error(e)
