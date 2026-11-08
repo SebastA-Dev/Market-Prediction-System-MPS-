@@ -4,7 +4,7 @@ import httpx
 from pydantic import ValidationError
 from fastapi import APIRouter, Depends
 from ...data_providers.schemas import PolygonSchemas as PG
-from ..errors import raise_upstream_error
+from ..errors import UPSTREAM_ERROR_RESPONSES, raise_upstream_error
 
 # ==============================================================================
 # Configuración y Autenticación Polygon.io API
@@ -34,7 +34,7 @@ def _get_headers() -> Dict[str, str]:
 # ==============================================================================
 
 
-def aggregates(p: PG.AggregatesParams) -> Optional[PG.AggregatesResponse]:
+def aggregates(p: PG.AggregatesParams) -> PG.AggregatesResponse:
     """
     Endpoint: GET /v2/aggs/ticker/{ticker}/range/{multiplier}/{timespan}/{from}/{to}
     Obtiene velas OHLCV históricas para secuencias continuas en Galformer y factores Qlib.
@@ -57,7 +57,7 @@ def aggregates(p: PG.AggregatesParams) -> Optional[PG.AggregatesResponse]:
             raw = response.json()
 
         if not isinstance(raw, dict):
-            return None
+            raise_upstream_error(ValueError("Unexpected upstream response shape"))
 
         return PG.AggregatesResponse.model_validate(raw)
     except (ValidationError, httpx.HTTPError, ValueError) as exc:
@@ -69,7 +69,7 @@ def aggregates(p: PG.AggregatesParams) -> Optional[PG.AggregatesResponse]:
 # ==============================================================================
 
 
-def grouped_daily(p: PG.GroupedDailyParams) -> Optional[PG.GroupedDailyResponse]:
+def grouped_daily(p: PG.GroupedDailyParams) -> PG.GroupedDailyResponse:
     """
     Endpoint: GET /v2/aggs/grouped/locale/us/market/stocks/{date}
     Obtiene el rendimiento diario de todo el mercado de acciones de EE.UU. para una fecha específica.
@@ -85,7 +85,7 @@ def grouped_daily(p: PG.GroupedDailyParams) -> Optional[PG.GroupedDailyResponse]
             raw = response.json()
 
         if not isinstance(raw, dict):
-            return None
+            raise_upstream_error(ValueError("Unexpected upstream response shape"))
 
         return PG.GroupedDailyResponse.model_validate(raw)
     except (ValidationError, httpx.HTTPError, ValueError) as exc:
@@ -97,7 +97,7 @@ def grouped_daily(p: PG.GroupedDailyParams) -> Optional[PG.GroupedDailyResponse]
 # ==============================================================================
 
 
-def daily_open_close(p: PG.DailyOpenCloseParams) -> Optional[PG.DailyOpenCloseResponse]:
+def daily_open_close(p: PG.DailyOpenCloseParams) -> PG.DailyOpenCloseResponse:
     """
     Endpoint: GET /v1/open-close/{ticker}/{date}
     Obtiene el resumen de precios de la sesión (open, high, low, close, pre/after market).
@@ -113,7 +113,7 @@ def daily_open_close(p: PG.DailyOpenCloseParams) -> Optional[PG.DailyOpenCloseRe
             raw = response.json()
 
         if not isinstance(raw, dict):
-            return None
+            raise_upstream_error(ValueError("Unexpected upstream response shape"))
 
         return PG.DailyOpenCloseResponse.model_validate(raw)
     except (ValidationError, httpx.HTTPError, ValueError) as exc:
@@ -125,7 +125,7 @@ def daily_open_close(p: PG.DailyOpenCloseParams) -> Optional[PG.DailyOpenCloseRe
 # ==============================================================================
 
 
-def ticker_details(p: PG.TickerDetailsParams) -> Optional[PG.TickerDetailsResponse]:
+def ticker_details(p: PG.TickerDetailsParams) -> PG.TickerDetailsResponse:
     """
     Endpoint: GET /v3/reference/tickers/{ticker}
     Obtiene metadatos fundamentales, descripción, clasificación SIC y empleados de la compañía.
@@ -140,7 +140,7 @@ def ticker_details(p: PG.TickerDetailsParams) -> Optional[PG.TickerDetailsRespon
             raw = response.json()
 
         if not isinstance(raw, dict):
-            return None
+            raise_upstream_error(ValueError("Unexpected upstream response shape"))
 
         return PG.TickerDetailsResponse.model_validate(raw)
     except (ValidationError, httpx.HTTPError, ValueError) as exc:
@@ -152,7 +152,7 @@ def ticker_details(p: PG.TickerDetailsParams) -> Optional[PG.TickerDetailsRespon
 # ==============================================================================
 
 
-def market_status() -> Optional[PG.PolygonMarketStatusResponse]:
+def market_status() -> PG.PolygonMarketStatusResponse:
     """
     Endpoint: GET /v1/marketstatus/now
     Consulta el estado operativo en tiempo real de las bolsas y divisas (open/closed/extended).
@@ -165,7 +165,7 @@ def market_status() -> Optional[PG.PolygonMarketStatusResponse]:
             raw = response.json()
 
         if not isinstance(raw, dict):
-            return None
+            raise_upstream_error(ValueError("Unexpected upstream response shape"))
 
         return PG.PolygonMarketStatusResponse.model_validate(raw)
     except (ValidationError, httpx.HTTPError, ValueError) as exc:
@@ -177,34 +177,54 @@ def market_status() -> Optional[PG.PolygonMarketStatusResponse]:
 # ==============================================================================
 
 
-@router.get("/aggs", response_model=Optional[PG.AggregatesResponse])
+@router.get(
+    "/aggs",
+    response_model=PG.AggregatesResponse,
+    responses=UPSTREAM_ERROR_RESPONSES,
+)
 def get_aggregates(
     p: PG.AggregatesParams = Depends(),
-) -> Optional[PG.AggregatesResponse]:
+) -> PG.AggregatesResponse:
     return aggregates(p)
 
 
-@router.get("/grouped-daily", response_model=Optional[PG.GroupedDailyResponse])
+@router.get(
+    "/grouped-daily",
+    response_model=PG.GroupedDailyResponse,
+    responses=UPSTREAM_ERROR_RESPONSES,
+)
 def get_grouped_daily(
     p: PG.GroupedDailyParams = Depends(),
-) -> Optional[PG.GroupedDailyResponse]:
+) -> PG.GroupedDailyResponse:
     return grouped_daily(p)
 
 
-@router.get("/open-close", response_model=Optional[PG.DailyOpenCloseResponse])
+@router.get(
+    "/open-close",
+    response_model=PG.DailyOpenCloseResponse,
+    responses=UPSTREAM_ERROR_RESPONSES,
+)
 def get_daily_open_close(
     p: PG.DailyOpenCloseParams = Depends(),
-) -> Optional[PG.DailyOpenCloseResponse]:
+) -> PG.DailyOpenCloseResponse:
     return daily_open_close(p)
 
 
-@router.get("/ticker-details", response_model=Optional[PG.TickerDetailsResponse])
+@router.get(
+    "/ticker-details",
+    response_model=PG.TickerDetailsResponse,
+    responses=UPSTREAM_ERROR_RESPONSES,
+)
 def get_ticker_details(
     p: PG.TickerDetailsParams = Depends(),
-) -> Optional[PG.TickerDetailsResponse]:
+) -> PG.TickerDetailsResponse:
     return ticker_details(p)
 
 
-@router.get("/market-status", response_model=Optional[PG.PolygonMarketStatusResponse])
-def get_market_status() -> Optional[PG.PolygonMarketStatusResponse]:
+@router.get(
+    "/market-status",
+    response_model=PG.PolygonMarketStatusResponse,
+    responses=UPSTREAM_ERROR_RESPONSES,
+)
+def get_market_status() -> PG.PolygonMarketStatusResponse:
     return market_status()

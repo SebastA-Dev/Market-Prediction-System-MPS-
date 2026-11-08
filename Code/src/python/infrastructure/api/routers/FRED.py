@@ -4,7 +4,7 @@ import httpx
 from pydantic import ValidationError
 from fastapi import APIRouter, Depends
 from ...data_providers.schemas import FREDSchemas as FRED
-from ..errors import raise_upstream_error
+from ..errors import UPSTREAM_ERROR_RESPONSES, raise_upstream_error
 
 # ==============================================================================
 # Configuración y Autenticación Federal Reserve Economic Data (FRED)
@@ -23,7 +23,7 @@ def _get_headers() -> Dict[str, str]:
     return {"accept": "application/json"}
 
 
-def _add_fred_params(params: Optional[dict] = None) -> dict:
+def _add_fred_params(params: dict = None) -> dict:
     """Inyecta 'api_key' y 'file_type=json' requeridos por FRED API."""
     p = {k: v for k, v in (params or {}).items() if v is not None}
     p["file_type"] = "json"
@@ -39,7 +39,7 @@ def _add_fred_params(params: Optional[dict] = None) -> dict:
 
 def series_observations(
     p: FRED.FREDObservationsParams,
-) -> Optional[FRED.FREDObservationsResponse]:
+) -> FRED.FREDObservationsResponse:
     """
     Endpoint: GET /fred/series/observations
     Obtiene observaciones históricas de series macroeconómicas (GDP, CPI, UNRATE, DGS10, VIX, etc.).
@@ -64,7 +64,7 @@ def series_observations(
             raw = response.json()
 
         if not isinstance(raw, dict):
-            return None
+            raise_upstream_error(ValueError("Unexpected upstream response shape"))
 
         return FRED.FREDObservationsResponse.model_validate(raw)
     except (ValidationError, httpx.HTTPError, ValueError) as exc:
@@ -76,7 +76,7 @@ def series_observations(
 # ==============================================================================
 
 
-def series_metadata(p: FRED.FREDSeriesParams) -> Optional[FRED.FREDSeriesResponse]:
+def series_metadata(p: FRED.FREDSeriesParams) -> FRED.FREDSeriesResponse:
     """
     Endpoint: GET /fred/series
     Obtiene metadatos y descripción detallada de una serie macroeconómica de la Reserva Federal.
@@ -94,7 +94,7 @@ def series_metadata(p: FRED.FREDSeriesParams) -> Optional[FRED.FREDSeriesRespons
             raw = response.json()
 
         if not isinstance(raw, dict):
-            return None
+            raise_upstream_error(ValueError("Unexpected upstream response shape"))
 
         return FRED.FREDSeriesResponse.model_validate(raw)
     except (ValidationError, httpx.HTTPError, ValueError) as exc:
@@ -107,16 +107,22 @@ def series_metadata(p: FRED.FREDSeriesParams) -> Optional[FRED.FREDSeriesRespons
 
 
 @router.get(
-    "/series/observations", response_model=Optional[FRED.FREDObservationsResponse]
+    "/series/observations",
+    response_model=FRED.FREDObservationsResponse,
+    responses=UPSTREAM_ERROR_RESPONSES,
 )
 def get_series_observations(
     p: FRED.FREDObservationsParams = Depends(),
-) -> Optional[FRED.FREDObservationsResponse]:
+) -> FRED.FREDObservationsResponse:
     return series_observations(p)
 
 
-@router.get("/series", response_model=Optional[FRED.FREDSeriesResponse])
+@router.get(
+    "/series",
+    response_model=FRED.FREDSeriesResponse,
+    responses=UPSTREAM_ERROR_RESPONSES,
+)
 def get_series_metadata(
     p: FRED.FREDSeriesParams = Depends(),
-) -> Optional[FRED.FREDSeriesResponse]:
+) -> FRED.FREDSeriesResponse:
     return series_metadata(p)

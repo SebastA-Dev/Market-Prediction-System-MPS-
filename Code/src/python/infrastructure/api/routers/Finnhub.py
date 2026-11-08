@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional, Union
 import httpx
 from pydantic import ValidationError
 from fastapi import APIRouter, Depends
+from ..errors import UPSTREAM_ERROR_RESPONSES, raise_upstream_error
 
 from ...data_providers.schemas import FinnhubSchema as FS
 
@@ -36,7 +37,7 @@ def _get_headers() -> Dict[str, str]:
     return headers
 
 
-def _build_params(extra_params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+def _build_params(extra_params: Dict[str, Any] = None) -> Dict[str, Any]:
     """Construye los query params incluyendo token si está disponible."""
     params: Dict[str, Any] = {}
     key = _get_api_key()
@@ -54,7 +55,7 @@ def _build_params(extra_params: Optional[Dict[str, Any]] = None) -> Dict[str, An
 # ==============================================================================
 
 
-def symbol_lookup_params(p: FS.SymbolLookupParams) -> Optional[FS.SymbolLookupResponse]:
+def symbol_lookup_params(p: FS.SymbolLookupParams) -> FS.SymbolLookupResponse:
     """Busca símbolos y empresas por término de búsqueda y filtro opcional de exchange."""
     try:
         url = f"{__BASE_URL}/search"
@@ -70,9 +71,8 @@ def symbol_lookup_params(p: FS.SymbolLookupParams) -> Optional[FS.SymbolLookupRe
             raw = response.json()
 
         return FS.SymbolLookupResponse.model_validate(raw)
-    except (ValidationError, httpx.HTTPError, Exception) as e:
-        logger.error(f"[Finnhub] Error en symbol_lookup: {e}")
-        return None
+    except (ValidationError, httpx.HTTPError, ValueError) as exc:
+        raise_upstream_error(exc)
 
 
 # ==============================================================================
@@ -80,7 +80,7 @@ def symbol_lookup_params(p: FS.SymbolLookupParams) -> Optional[FS.SymbolLookupRe
 # ==============================================================================
 
 
-def stock_symbols(p: FS.StockSymbolsParams) -> Optional[List[FS.StockSymbolItem]]:
+def stock_symbols(p: FS.StockSymbolsParams) -> List[FS.StockSymbolItem]:
     """Obtiene la lista de símbolos soportados para un exchange específico."""
     try:
         url = f"{__BASE_URL}/stock/symbol"
@@ -98,11 +98,10 @@ def stock_symbols(p: FS.StockSymbolsParams) -> Optional[List[FS.StockSymbolItem]
             raw = response.json()
 
         if not isinstance(raw, list):
-            return None
+            raise_upstream_error(ValueError("Unexpected upstream response shape"))
         return [FS.StockSymbolItem.model_validate(item) for item in raw]
-    except (ValidationError, httpx.HTTPError, Exception) as e:
-        logger.error(f"[Finnhub] Error en stock_symbols: {e}")
-        return None
+    except (ValidationError, httpx.HTTPError, ValueError) as exc:
+        raise_upstream_error(exc)
 
 
 # Alias para compatibilidad
@@ -114,7 +113,7 @@ stock_symbol = stock_symbols
 # ==============================================================================
 
 
-def market_status(p: FS.MarketStatusParams) -> Optional[FS.MarketStatusResponse]:
+def market_status(p: FS.MarketStatusParams) -> FS.MarketStatusResponse:
     """Consulta el estado operativo actual de un mercado bursátil (abierto/cerrado/sesión)."""
     try:
         url = f"{__BASE_URL}/stock/market-status"
@@ -128,9 +127,8 @@ def market_status(p: FS.MarketStatusParams) -> Optional[FS.MarketStatusResponse]
             raw = response.json()
 
         return FS.MarketStatusResponse.model_validate(raw)
-    except (ValidationError, httpx.HTTPError, Exception) as e:
-        logger.error(f"[Finnhub] Error en market_status: {e}")
-        return None
+    except (ValidationError, httpx.HTTPError, ValueError) as exc:
+        raise_upstream_error(exc)
 
 
 # ==============================================================================
@@ -138,7 +136,7 @@ def market_status(p: FS.MarketStatusParams) -> Optional[FS.MarketStatusResponse]
 # ==============================================================================
 
 
-def market_news(p: FS.MarketNewsParams) -> Optional[List[FS.NewsArticle]]:
+def market_news(p: FS.MarketNewsParams) -> List[FS.NewsArticle]:
     """Obtiene noticias generales del mercado según categoría (general, forex, crypto, merger)."""
     try:
         url = f"{__BASE_URL}/news"
@@ -155,11 +153,10 @@ def market_news(p: FS.MarketNewsParams) -> Optional[List[FS.NewsArticle]]:
             raw = response.json()
 
         if not isinstance(raw, list):
-            return None
+            raise_upstream_error(ValueError("Unexpected upstream response shape"))
         return [FS.NewsArticle.model_validate(item) for item in raw]
-    except (ValidationError, httpx.HTTPError, Exception) as e:
-        logger.error(f"[Finnhub] Error en market_news: {e}")
-        return None
+    except (ValidationError, httpx.HTTPError, ValueError) as exc:
+        raise_upstream_error(exc)
 
 
 # ==============================================================================
@@ -167,7 +164,7 @@ def market_news(p: FS.MarketNewsParams) -> Optional[List[FS.NewsArticle]]:
 # ==============================================================================
 
 
-def company_news(p: FS.CompanyNewsParams) -> Optional[List[FS.NewsArticle]]:
+def company_news(p: FS.CompanyNewsParams) -> List[FS.NewsArticle]:
     """Obtiene noticias de una empresa en un rango de fechas determinado."""
     try:
         url = f"{__BASE_URL}/company-news"
@@ -185,11 +182,10 @@ def company_news(p: FS.CompanyNewsParams) -> Optional[List[FS.NewsArticle]]:
             raw = response.json()
 
         if not isinstance(raw, list):
-            return None
+            raise_upstream_error(ValueError("Unexpected upstream response shape"))
         return [FS.NewsArticle.model_validate(item) for item in raw]
-    except (ValidationError, httpx.HTTPError, Exception) as e:
-        logger.error(f"[Finnhub] Error en company_news: {e}")
-        return None
+    except (ValidationError, httpx.HTTPError, ValueError) as exc:
+        raise_upstream_error(exc)
 
 
 # ==============================================================================
@@ -199,7 +195,7 @@ def company_news(p: FS.CompanyNewsParams) -> Optional[List[FS.NewsArticle]]:
 
 def insider_sentiment(
     p: FS.InsiderSentimentParams,
-) -> Optional[FS.InsiderSentimentResponse]:
+) -> FS.InsiderSentimentResponse:
     """Consulta el sentimiento mensual de insiders (compras/ventas y puntuación MSPR)."""
     try:
         url = f"{__BASE_URL}/stock/insider-sentiment"
@@ -217,9 +213,8 @@ def insider_sentiment(
             raw = response.json()
 
         return FS.InsiderSentimentResponse.model_validate(raw)
-    except (ValidationError, httpx.HTTPError, Exception) as e:
-        logger.error(f"[Finnhub] Error en insider_sentiment: {e}")
-        return None
+    except (ValidationError, httpx.HTTPError, ValueError) as exc:
+        raise_upstream_error(exc)
 
 
 # ==============================================================================
@@ -227,7 +222,7 @@ def insider_sentiment(
 # ==============================================================================
 
 
-def historical_ticks(p: FS.HistoricalTickParams) -> Optional[FS.HistoricalTickResponse]:
+def historical_ticks(p: FS.HistoricalTickParams) -> FS.HistoricalTickResponse:
     """Obtiene ticks y datos históricos de operaciones para una fecha determinada."""
     try:
         url = f"{__BASE_URL}/stock/tick"
@@ -246,9 +241,8 @@ def historical_ticks(p: FS.HistoricalTickParams) -> Optional[FS.HistoricalTickRe
             raw = response.json()
 
         return FS.HistoricalTickResponse.model_validate(raw)
-    except (ValidationError, httpx.HTTPError, Exception) as e:
-        logger.error(f"[Finnhub] Error en historical_ticks: {e}")
-        return None
+    except (ValidationError, httpx.HTTPError, ValueError) as exc:
+        raise_upstream_error(exc)
 
 
 # Alias
@@ -280,50 +274,78 @@ def parse_trade_message(
 # ==============================================================================
 
 
-@router.get("/search", response_model=Optional[FS.SymbolLookupResponse])
+@router.get(
+    "/search",
+    response_model=FS.SymbolLookupResponse,
+    responses=UPSTREAM_ERROR_RESPONSES,
+)
 def get_symbol_lookup(
     p: FS.SymbolLookupParams = Depends(),
-) -> Optional[FS.SymbolLookupResponse]:
+) -> FS.SymbolLookupResponse:
     return symbol_lookup_params(p)
 
 
-@router.get("/stock/symbols", response_model=Optional[List[FS.StockSymbolItem]])
+@router.get(
+    "/stock/symbols",
+    response_model=List[FS.StockSymbolItem],
+    responses=UPSTREAM_ERROR_RESPONSES,
+)
 def get_stock_symbols(
     p: FS.StockSymbolsParams = Depends(),
-) -> Optional[List[FS.StockSymbolItem]]:
+) -> List[FS.StockSymbolItem]:
     return stock_symbols(p)
 
 
-@router.get("/market-status", response_model=Optional[FS.MarketStatusResponse])
+@router.get(
+    "/market-status",
+    response_model=FS.MarketStatusResponse,
+    responses=UPSTREAM_ERROR_RESPONSES,
+)
 def get_market_status(
     p: FS.MarketStatusParams = Depends(),
-) -> Optional[FS.MarketStatusResponse]:
+) -> FS.MarketStatusResponse:
     return market_status(p)
 
 
-@router.get("/news", response_model=Optional[List[FS.NewsArticle]])
+@router.get(
+    "/news",
+    response_model=List[FS.NewsArticle],
+    responses=UPSTREAM_ERROR_RESPONSES,
+)
 def get_market_news(
     p: FS.MarketNewsParams = Depends(),
-) -> Optional[List[FS.NewsArticle]]:
+) -> List[FS.NewsArticle]:
     return market_news(p)
 
 
-@router.get("/company-news", response_model=Optional[List[FS.NewsArticle]])
+@router.get(
+    "/company-news",
+    response_model=List[FS.NewsArticle],
+    responses=UPSTREAM_ERROR_RESPONSES,
+)
 def get_company_news(
     p: FS.CompanyNewsParams = Depends(),
-) -> Optional[List[FS.NewsArticle]]:
+) -> List[FS.NewsArticle]:
     return company_news(p)
 
 
-@router.get("/insider-sentiment", response_model=Optional[FS.InsiderSentimentResponse])
+@router.get(
+    "/insider-sentiment",
+    response_model=FS.InsiderSentimentResponse,
+    responses=UPSTREAM_ERROR_RESPONSES,
+)
 def get_insider_sentiment(
     p: FS.InsiderSentimentParams = Depends(),
-) -> Optional[FS.InsiderSentimentResponse]:
+) -> FS.InsiderSentimentResponse:
     return insider_sentiment(p)
 
 
-@router.get("/tick", response_model=Optional[FS.HistoricalTickResponse])
+@router.get(
+    "/tick",
+    response_model=FS.HistoricalTickResponse,
+    responses=UPSTREAM_ERROR_RESPONSES,
+)
 def get_historical_ticks(
     p: FS.HistoricalTickParams = Depends(),
-) -> Optional[FS.HistoricalTickResponse]:
+) -> FS.HistoricalTickResponse:
     return historical_ticks(p)

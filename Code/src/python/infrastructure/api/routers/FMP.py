@@ -5,7 +5,7 @@ import httpx
 from pydantic import ValidationError
 from fastapi import APIRouter, Depends, Query
 from ...data_providers.schemas import FMPSchemas as FMP
-from ..errors import raise_upstream_error
+from ..errors import UPSTREAM_ERROR_RESPONSES, raise_upstream_error
 
 # ==============================================================================
 # Configuración y Autenticación Financial Modeling Prep (FMP)
@@ -25,7 +25,7 @@ def _get_headers() -> Dict[str, str]:
     return headers
 
 
-def _add_apikey(params: Optional[dict] = None) -> dict:
+def _add_apikey(params: dict = None) -> dict:
     """Elimina parámetros nulos; la clave viaja en el encabezado apikey."""
     return {k: v for k, v in (params or {}).items() if v is not None}
 
@@ -35,7 +35,7 @@ def _add_apikey(params: Optional[dict] = None) -> dict:
 # ==============================================================================
 
 
-def sector_performance(snapshot_date: Optional[str] = None) -> Optional[List[FMP.SectorPerformanceItem]]:
+def sector_performance(snapshot_date: str = None) -> List[FMP.SectorPerformanceItem]:
     """
     Endpoint: GET /stable/sector-performance-snapshot?date=...
     Snapshot diario de rendimiento por sectores económicos.
@@ -49,7 +49,7 @@ def sector_performance(snapshot_date: Optional[str] = None) -> Optional[List[FMP
             raw = response.json()
 
         if not isinstance(raw, list):
-            return None
+            raise_upstream_error(ValueError("Unexpected upstream response shape"))
         return [FMP.SectorPerformanceItem.model_validate(item) for item in raw]
     except (ValidationError, httpx.HTTPError, ValueError) as exc:
         raise_upstream_error(exc)
@@ -57,7 +57,7 @@ def sector_performance(snapshot_date: Optional[str] = None) -> Optional[List[FMP
 
 def historical_sector_performance(
     p: FMP.HistoricalSectorPerformanceParams,
-) -> Optional[List[FMP.HistoricalSectorPerformanceItem]]:
+) -> List[FMP.HistoricalSectorPerformanceItem]:
     """
     Endpoint: GET /stable/historical-sector-performance?sector=...
     Rendimiento histórico diario para el sector seleccionado.
@@ -78,7 +78,7 @@ def historical_sector_performance(
             raw = response.json()
 
         if not isinstance(raw, list):
-            return None
+            raise_upstream_error(ValueError("Unexpected upstream response shape"))
         return [
             FMP.HistoricalSectorPerformanceItem.model_validate(item) for item in raw
         ]
@@ -86,7 +86,7 @@ def historical_sector_performance(
         raise_upstream_error(exc)
 
 
-def treasury_rates(p: FMP.TreasuryRatesParams) -> Optional[List[FMP.TreasuryRatesItem]]:
+def treasury_rates(p: FMP.TreasuryRatesParams) -> List[FMP.TreasuryRatesItem]:
     """
     Endpoint: GET /stable/treasury-rates
     Tasas de la curva de rendimientos del Tesoro de EE.UU. (1M a 30Y).
@@ -105,7 +105,7 @@ def treasury_rates(p: FMP.TreasuryRatesParams) -> Optional[List[FMP.TreasuryRate
             raw = response.json()
 
         if not isinstance(raw, list):
-            return None
+            raise_upstream_error(ValueError("Unexpected upstream response shape"))
         return [FMP.TreasuryRatesItem.model_validate(item) for item in raw]
     except (ValidationError, httpx.HTTPError, ValueError) as exc:
         raise_upstream_error(exc)
@@ -113,7 +113,7 @@ def treasury_rates(p: FMP.TreasuryRatesParams) -> Optional[List[FMP.TreasuryRate
 
 def company_screener(
     p: FMP.CompanyScreenerParams,
-) -> Optional[List[FMP.CompanyScreenerItem]]:
+) -> List[FMP.CompanyScreenerItem]:
     """
     Endpoint: GET /stable/company-screener
     Filtro cuantitativo de empresas por sector, industria, capitalización y beta.
@@ -137,7 +137,7 @@ def company_screener(
             raw = response.json()
 
         if not isinstance(raw, list):
-            return None
+            raise_upstream_error(ValueError("Unexpected upstream response shape"))
         return [FMP.CompanyScreenerItem.model_validate(item) for item in raw]
     except (ValidationError, httpx.HTTPError, ValueError) as exc:
         raise_upstream_error(exc)
@@ -148,7 +148,7 @@ def company_screener(
 # ==============================================================================
 
 
-def company_profile(p: FMP.SymbolParam) -> Optional[List[FMP.CompanyProfileItem]]:
+def company_profile(p: FMP.SymbolParam) -> List[FMP.CompanyProfileItem]:
     """
     Endpoint: GET /stable/profile?symbol=...
     Perfil integral, valoración intrínseca DCF, beta y capitalización bursátil.
@@ -161,13 +161,13 @@ def company_profile(p: FMP.SymbolParam) -> Optional[List[FMP.CompanyProfileItem]
             raw = response.json()
 
         if not isinstance(raw, list):
-            return None
+            raise_upstream_error(ValueError("Unexpected upstream response shape"))
         return [FMP.CompanyProfileItem.model_validate(item) for item in raw]
     except (ValidationError, httpx.HTTPError, ValueError) as exc:
         raise_upstream_error(exc)
 
 
-def ratios_ttm(p: FMP.SymbolParam) -> Optional[List[FMP.FinancialRatiosTTMItem]]:
+def ratios_ttm(p: FMP.SymbolParam) -> List[FMP.FinancialRatiosTTMItem]:
     """
     Endpoint: GET /stable/ratios-ttm?symbol=...
     Ratios financieros trailing twelve months (P/E, P/B, ROE, ROA, Debt/Equity).
@@ -180,13 +180,13 @@ def ratios_ttm(p: FMP.SymbolParam) -> Optional[List[FMP.FinancialRatiosTTMItem]]
             raw = response.json()
 
         if not isinstance(raw, list):
-            return None
+            raise_upstream_error(ValueError("Unexpected upstream response shape"))
         return [FMP.FinancialRatiosTTMItem.model_validate(item) for item in raw]
     except (ValidationError, httpx.HTTPError, ValueError) as exc:
         raise_upstream_error(exc)
 
 
-def key_metrics_ttm(p: FMP.SymbolParam) -> Optional[List[FMP.KeyMetricsTTMItem]]:
+def key_metrics_ttm(p: FMP.SymbolParam) -> List[FMP.KeyMetricsTTMItem]:
     """
     Endpoint: GET /stable/key-metrics-ttm?symbol=...
     Métricas de valoración empresarial TTM (EV, EV/EBITDA, Free Cash Flow, ROIC).
@@ -199,7 +199,7 @@ def key_metrics_ttm(p: FMP.SymbolParam) -> Optional[List[FMP.KeyMetricsTTMItem]]
             raw = response.json()
 
         if not isinstance(raw, list):
-            return None
+            raise_upstream_error(ValueError("Unexpected upstream response shape"))
         return [FMP.KeyMetricsTTMItem.model_validate(item) for item in raw]
     except (ValidationError, httpx.HTTPError, ValueError) as exc:
         raise_upstream_error(exc)
@@ -207,7 +207,7 @@ def key_metrics_ttm(p: FMP.SymbolParam) -> Optional[List[FMP.KeyMetricsTTMItem]]
 
 def price_target_consensus(
     p: FMP.SymbolParam,
-) -> Optional[List[FMP.PriceTargetConsensusItem]]:
+) -> List[FMP.PriceTargetConsensusItem]:
     """
     Endpoint: GET /stable/price-target-consensus?symbol=...
     Consenso de precios objetivo de analistas (high, low, median, consensus).
@@ -222,7 +222,7 @@ def price_target_consensus(
             raw = response.json()
 
         if not isinstance(raw, list):
-            return None
+            raise_upstream_error(ValueError("Unexpected upstream response shape"))
         return [FMP.PriceTargetConsensusItem.model_validate(item) for item in raw]
     except (ValidationError, httpx.HTTPError, ValueError) as exc:
         raise_upstream_error(exc)
@@ -235,7 +235,7 @@ def price_target_consensus(
 
 def historical_price_full(
     p: FMP.HistoricalPriceFullParams,
-) -> Optional[FMP.HistoricalPriceFullResponse]:
+) -> FMP.HistoricalPriceFullResponse:
     """
     Endpoint: GET /stable/historical-price-eod/full?symbol=...
     Serie de tiempo histórica diaria completa con precios ajustados y volumen para Galformer.
@@ -255,7 +255,7 @@ def historical_price_full(
             raw = response.json()
 
         if not isinstance(raw, list):
-            return None
+            raise_upstream_error(ValueError("Unexpected upstream response shape"))
         records = [FMP.HistoricalDailyPriceRecord.model_validate(item) for item in raw]
         return FMP.HistoricalPriceFullResponse(symbol=p.symbol, historical=records)
     except (ValidationError, httpx.HTTPError, ValueError) as exc:
@@ -268,66 +268,88 @@ def historical_price_full(
 
 
 @router.get(
-    "/sector-performance", response_model=Optional[List[FMP.SectorPerformanceItem]]
+    "/sector-performance",
+    response_model=List[FMP.SectorPerformanceItem],
+    responses=UPSTREAM_ERROR_RESPONSES,
 )
 def get_sector_performance(
-    snapshot_date: Optional[str] = Query(None, alias="date"),
-) -> Optional[List[FMP.SectorPerformanceItem]]:
+    snapshot_date: str = Query(None, alias="date"),
+) -> List[FMP.SectorPerformanceItem]:
     return sector_performance(snapshot_date=snapshot_date)
 
 
 @router.get(
     "/historical-sectors-performance",
-    response_model=Optional[List[FMP.HistoricalSectorPerformanceItem]],
+    response_model=List[FMP.HistoricalSectorPerformanceItem],
+    responses=UPSTREAM_ERROR_RESPONSES,
 )
 def get_historical_sectors_performance(
     p: FMP.HistoricalSectorPerformanceParams = Depends(),
-) -> Optional[List[FMP.HistoricalSectorPerformanceItem]]:
+) -> List[FMP.HistoricalSectorPerformanceItem]:
     return historical_sector_performance(p)
 
 
-@router.get("/treasury", response_model=Optional[List[FMP.TreasuryRatesItem]])
+@router.get(
+    "/treasury",
+    response_model=List[FMP.TreasuryRatesItem],
+    responses=UPSTREAM_ERROR_RESPONSES,
+)
 def get_treasury_rates(
     p: FMP.TreasuryRatesParams = Depends(),
-) -> Optional[List[FMP.TreasuryRatesItem]]:
+) -> List[FMP.TreasuryRatesItem]:
     return treasury_rates(p)
 
 
-@router.get("/profile", response_model=Optional[List[FMP.CompanyProfileItem]])
+@router.get(
+    "/profile",
+    response_model=List[FMP.CompanyProfileItem],
+    responses=UPSTREAM_ERROR_RESPONSES,
+)
 def get_company_profile(
     p: FMP.SymbolParam = Depends(),
-) -> Optional[List[FMP.CompanyProfileItem]]:
+) -> List[FMP.CompanyProfileItem]:
     return company_profile(p)
 
 
-@router.get("/ratios-ttm", response_model=Optional[List[FMP.FinancialRatiosTTMItem]])
+@router.get(
+    "/ratios-ttm",
+    response_model=List[FMP.FinancialRatiosTTMItem],
+    responses=UPSTREAM_ERROR_RESPONSES,
+)
 def get_ratios_ttm(
     p: FMP.SymbolParam = Depends(),
-) -> Optional[List[FMP.FinancialRatiosTTMItem]]:
+) -> List[FMP.FinancialRatiosTTMItem]:
     return ratios_ttm(p)
 
 
-@router.get("/key-metrics-ttm", response_model=Optional[List[FMP.KeyMetricsTTMItem]])
+@router.get(
+    "/key-metrics-ttm",
+    response_model=List[FMP.KeyMetricsTTMItem],
+    responses=UPSTREAM_ERROR_RESPONSES,
+)
 def get_key_metrics_ttm(
     p: FMP.SymbolParam = Depends(),
-) -> Optional[List[FMP.KeyMetricsTTMItem]]:
+) -> List[FMP.KeyMetricsTTMItem]:
     return key_metrics_ttm(p)
 
 
 @router.get(
     "/price-target-consensus",
-    response_model=Optional[List[FMP.PriceTargetConsensusItem]],
+    response_model=List[FMP.PriceTargetConsensusItem],
+    responses=UPSTREAM_ERROR_RESPONSES,
 )
 def get_price_target_consensus(
     p: FMP.SymbolParam = Depends(),
-) -> Optional[List[FMP.PriceTargetConsensusItem]]:
+) -> List[FMP.PriceTargetConsensusItem]:
     return price_target_consensus(p)
 
 
 @router.get(
-    "/historical-price-full", response_model=Optional[FMP.HistoricalPriceFullResponse]
+    "/historical-price-full",
+    response_model=FMP.HistoricalPriceFullResponse,
+    responses=UPSTREAM_ERROR_RESPONSES,
 )
 def get_historical_price_full(
     p: FMP.HistoricalPriceFullParams = Depends(),
-) -> Optional[FMP.HistoricalPriceFullResponse]:
+) -> FMP.HistoricalPriceFullResponse:
     return historical_price_full(p)

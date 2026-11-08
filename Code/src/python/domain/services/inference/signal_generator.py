@@ -55,6 +55,14 @@ class SignalGenerationEngine:
         self._galformer_models: Dict[str, PyTorchGalformer] = {}
         self._master_model: Optional[PyTorchMASTER] = None
 
+    def clear_model_cache(self, ticker: Optional[str] = None) -> None:
+        """Force later inferences to load newly trained local checkpoints."""
+        if ticker is None:
+            self._galformer_models.clear()
+        else:
+            self._galformer_models.pop(ticker, None)
+        self._master_model = None
+
     def process_tick(
         self,
         ticker: str,
@@ -99,9 +107,15 @@ class SignalGenerationEngine:
             f_tensor = torch.from_numpy(factor_values).unsqueeze(0).to(self.device)
             m_tensor = torch.from_numpy(market_context_vector).unsqueeze(0).to(self.device)
             num_factors = len(factor_values)
-            dummy_master = PyTorchMASTER(num_factors=num_factors).to(self.device)
-            dummy_master.eval()
-            logits, guided = dummy_master(f_tensor, m_tensor)
+            if self._master_model is None:
+                self._master_model = PyTorchMASTER(num_factors=num_factors).to(self.device)
+                master_checkpoint = self.checkpoints_dir / "master_global.pt"
+                if master_checkpoint.is_file():
+                    self._master_model.load_state_dict(
+                        torch.load(master_checkpoint, map_location=self.device)
+                    )
+            self._master_model.eval()
+            logits, guided = self._master_model(f_tensor, m_tensor)
             pred_class = int(torch.argmax(logits, dim=-1).cpu().item())
             trend_map = {0: "BEARISH", 1: "NEUTRAL", 2: "BULLISH"}
             trend_str = trend_map.get(pred_class, "NEUTRAL")
@@ -123,7 +137,17 @@ class SignalGenerationEngine:
             if len(close_prices) > window_size:
                 seq = (np.diff(close_prices[-window_size - 1:]) / (close_prices[-window_size - 1:-1] + 1e-8)).astype(np.float32)
                 seq_tensor = torch.from_numpy(seq).unsqueeze(0).unsqueeze(-1).to(self.device)
-                gal_model = PyTorchGalformer(input_dim=1, horizon=horizon).to(self.device)
+                gal_model = self._galformer_models.get(ticker)
+                if gal_model is None:
+                    gal_model = PyTorchGalformer(input_dim=1, horizon=horizon).to(self.device)
+                    galformer_checkpoint = (
+                        self.checkpoints_dir / f"galformer_{ticker.lower()}.pt"
+                    )
+                    if galformer_checkpoint.is_file():
+                        gal_model.load_state_dict(
+                            torch.load(galformer_checkpoint, map_location=self.device)
+                        )
+                    self._galformer_models[ticker] = gal_model
                 gal_model.eval()
                 proj_out = gal_model(seq_tensor).squeeze(0).cpu().numpy()
                 projected_returns = proj_out

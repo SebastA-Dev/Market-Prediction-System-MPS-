@@ -10,6 +10,8 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 import logging
 import pandas as pd
+from fastapi import HTTPException
+from src.infrastructure.api.errors import raise_upstream_error
 
 logger = logging.getLogger(__name__)
 
@@ -118,9 +120,11 @@ class DataAcquisitionService:
             df = df.dropna(subset=["Close"]).reset_index(drop=True)
             logger.info(f"[DataAcquisition] Yahoo Finance: {len(df)} registros descargados para {symbol}")
             return df
+        except HTTPException:
+            raise
         except Exception as e:
             logger.error(f"[DataAcquisition] Error consultando Yahoo Finance para {symbol}: {e}")
-            return None
+            raise_upstream_error(e)
 
     @staticmethod
     def fetch_polygon_ohlcv(
@@ -168,9 +172,11 @@ class DataAcquisitionService:
             df = pd.DataFrame(records)
             logger.info(f"[DataAcquisition] Polygon.io: {len(df)} registros descargados para {ticker}")
             return df
+        except HTTPException:
+            raise
         except Exception as e:
             logger.error(f"[DataAcquisition] Error consultando Polygon para {ticker}: {e}")
-            return None
+            raise_upstream_error(e)
 
     @staticmethod
     def fetch_sector_performance() -> Optional[List[Dict]]:
@@ -184,7 +190,7 @@ class DataAcquisitionService:
             return None
         except Exception as e:
             logger.error(f"[DataAcquisition] Error consultando FMP sector_performance: {e}")
-            return None
+            raise_upstream_error(e)
 
     @staticmethod
     def fetch_macro_series(series_id: str = "GDP", limit: int = 100) -> Optional[pd.DataFrame]:
@@ -209,4 +215,4 @@ class DataAcquisitionService:
             return df
         except Exception as e:
             logger.error(f"[DataAcquisition] Error consultando FRED series {series_id}: {e}")
-            return None
+            raise_upstream_error(e)
