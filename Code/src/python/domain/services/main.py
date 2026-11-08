@@ -17,7 +17,7 @@ import os
 from pathlib import Path
 import re
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 import logging
 from dotenv import load_dotenv
@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
 # Modelos y servicios del dominio
-from Code.src.python.domain.models.market import (
+from domain.models.market import (
     IntentPredictionLog,
     IntentType,
     MarketSignalPayload,
@@ -41,7 +41,7 @@ from Code.src.python.domain.models.market import (
     SignalType,
 )
 
-from Code.src.python.infrastructure.api.routers import (
+from infrastructure.api.routers import (
     CoinGecko as cg,
     Finnhub as fn,
     FMP as f,
@@ -49,36 +49,37 @@ from Code.src.python.infrastructure.api.routers import (
     Polygon as p,
     YahooFinance as yf,
 )
-from Code.src.python.infrastructure.api.errors import UPSTREAM_ERROR_RESPONSES
-from Code.src.python.domain.services.data_binarization.qlib_bin_dump import (
+from infrastructure.api.errors import UPSTREAM_ERROR_RESPONSES
+from domain.services.data_binarization.qlib_bin_dump import (
     QlibBinaryDumpService,
 )
-from Code.src.python.domain.services.data_cleaning.clean_market_data import (
+from domain.services.data_cleaning.clean_market_data import (
     DataCleaningService,
 )
-from Code.src.python.domain.services.data_cleaning.data_acquisition import (
+from domain.services.data_cleaning.data_acquisition import (
     DataAcquisitionService,
 )
-from Code.src.python.domain.services.inference.risk_management import (
+from domain.services.inference.risk_management import (
     RiskManagementService,
 )
-from Code.src.python.domain.services.inference.signal_generator import (
+from domain.services.inference.signal_generator import (
     SignalGenerationEngine,
 )
-from Code.src.python.domain.services.inference.statistical_validator import (
+from domain.services.inference.statistical_validator import (
     StatisticalValidator,
 )
-from Code.src.python.domain.services.models_training.train_galformer import (
+from domain.services.intent_classifier import classify_investment_prompt
+from domain.services.models_training.train_galformer import (
     GalformerTrainer,
 )
-from Code.src.python.domain.services.models_training.train_master import MASTERTrainer
-from Code.src.python.domain.services.models_training.train_qlib_alpha import (
+from domain.services.models_training.train_master import MASTERTrainer
+from domain.services.models_training.train_qlib_alpha import (
     QlibAlphaTrainer,
 )
-from Code.src.python.domain.services.storage.mongo_repository import (
+from domain.services.storage.mongo_repository import (
     MongoMarketRepository,
 )
-from Code.src.python.domain.services.storage.redis_publisher import RedisSignalPublisher
+from domain.services.storage.redis_publisher import RedisSignalPublisher
 
 # Configuración de rutas
 BASE_DIR = Path(__file__).resolve().parent
@@ -129,6 +130,27 @@ app.include_router(yf.router)
 class IntentRequest(BaseModel):
     prompt: str = Field(..., example="Invertir 20000 en el sector de tecnología")
     user_id: Optional[str] = Field(None, example="3fa85f64-5717-4562-b3fc-2c963f66afa6")
+
+
+class IntentClassificationRequest(BaseModel):
+    prompt: str = Field(
+        ...,
+        min_length=1,
+        max_length=500,
+        examples=["Quiero invertir $20.000 en tecnología"],
+    )
+
+
+class IntentClassificationResponse(BaseModel):
+    normalized_prompt: str
+    intent_label: Literal["GLOBAL", "SECTORIAL", "ACTIVO", "SIN_CLASIFICAR"]
+    classified_intent: Optional[IntentType] = None
+    parsed_amount: Optional[float] = None
+    parsed_sector: Optional[str] = None
+    parsed_ticker: Optional[str] = None
+    candidate_sectors: List[str] = Field(default_factory=list)
+    needs_clarification: bool = False
+    clarification: Optional[str] = None
 
 
 class AssetRecommendation(BaseModel):
@@ -194,68 +216,17 @@ def parse_and_classify_intent(
     Clasifica la consulta del usuario en INTENT_MACRO, INTENT_SECTORIAL o INTENT_ACTIVO
     y extrae el monto, sector o ticker correspondiente.
     """
-    clean_p = prompt.strip().lower()
-
-    # Extraer monto
-    amount_match = re.search(r"(\$?\s*\d+[\d,]*(\.\d+)?)", clean_p)
-    amount = None
-    if amount_match:
-        try:
-            raw_amt = amount_match.group(1).replace("$", "").replace(",", "").strip()
-            amount = float(raw_amt)
-        except Exception:
-            amount = None
-
-    # Detectar activos individuales específicos
-    known_tickers = {
-        "apple": "AAPL",
-        "aapl": "AAPL",
-        "microsoft": "MSFT",
-        "msft": "MSFT",
-        "nvidia": "NVDA",
-        "nvda": "NVDA",
-        "bitcoin": "BTC-USD",
-        "btc": "BTC-USD",
-        "sp500": "GSPC",
-        "s&p500": "GSPC",
-        "nasdaq": "IXIC",
-        "ixic": "IXIC",
-    }
-    for name, sym in known_tickers.items():
-        if name in clean_p:
-            return IntentType.INTENT_ACTIVO, amount, None, sym
-
-    # Detectar sectores específicos
-    known_sectors = [
-        "tecnología",
-        "technology",
-        "tech",
-        "energía",
-        "energy",
-        "finanzas",
-        "financial",
-        "banca",
-        "salud",
-        "healthcare",
-        "consumo",
-        "consumer",
-    ]
-    for sec in known_sectors:
-        if sec in clean_p:
-            return IntentType.INTENT_SECTORIAL, amount, sec.capitalize(), None
-
-    # Por descarte: Si contiene monto general o palabras macro
-    if (
-        amount is not None
-        or "invertir" in clean_p
-        or "portafolio" in clean_p
-        or "diversificar" in clean_p
-    ):
-        return IntentType.INTENT_MACRO, amount, None, None
-
-    # No clasificado
-    raise ValueError(
-        "Prompt no interpretable en las categorías de intención soportadas."
+    result = classify_investment_prompt(prompt)
+    if result.classified_intent is None or result.needs_clarification:
+        raise ValueError(
+            result.clarification
+            or "No se pudo determinar la intención de inversión."
+        )
+    return (
+        IntentType(result.classified_intent),
+        result.parsed_amount,
+        result.parsed_sector,
+        result.parsed_ticker,
     )
 
 
@@ -271,6 +242,43 @@ def health_check():
         "service": "mps-analytical-domain",
         "timestamp": datetime.now(timezone.utc),
     }
+
+
+@app.post(
+    "/api/v1/intent/classify",
+    response_model=IntentClassificationResponse,
+    tags=["Intent Classification"],
+    summary="Normalize and classify an investment request",
+    description=(
+        "Cleans the text and identifies whether the request is global, sectoral, "
+        "asset-specific, or needs clarification. This endpoint does not fetch market data."
+    ),
+)
+def classify_intent_endpoint(
+    req: IntentClassificationRequest,
+) -> IntentClassificationResponse:
+    result = classify_investment_prompt(req.prompt)
+    intent_labels = {
+        "INTENT_MACRO": "GLOBAL",
+        "INTENT_SECTORIAL": "SECTORIAL",
+        "INTENT_ACTIVO": "ACTIVO",
+    }
+    label = intent_labels.get(result.classified_intent, "SIN_CLASIFICAR")
+    return IntentClassificationResponse(
+        normalized_prompt=result.normalized_prompt,
+        intent_label=label,
+        classified_intent=(
+            IntentType(result.classified_intent)
+            if result.classified_intent is not None
+            else None
+        ),
+        parsed_amount=result.parsed_amount,
+        parsed_sector=result.parsed_sector,
+        parsed_ticker=result.parsed_ticker,
+        candidate_sectors=list(result.candidate_sectors),
+        needs_clarification=result.needs_clarification,
+        clarification=result.clarification,
+    )
 
 
 @app.post("/api/v1/predict/intent", response_model=IntentResponse)
