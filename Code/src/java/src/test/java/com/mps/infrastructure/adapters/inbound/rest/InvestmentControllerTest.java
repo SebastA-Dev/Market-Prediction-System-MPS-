@@ -1,0 +1,110 @@
+package com.mps.infrastructure.adapters.inbound.rest;
+
+import com.mps.infrastructure.adapters.inbound.rest.dto.LoginRequest;
+import com.mps.infrastructure.adapters.inbound.rest.dto.LoginResponse;
+import com.mps.infrastructure.adapters.inbound.rest.dto.RegisterUserRequest;
+import com.mps.infrastructure.adapters.inbound.rest.dto.UserResponse;
+import com.mps.infrastructure.adapters.outbound.persistence.entity.AssetEntity;
+import com.mps.infrastructure.adapters.outbound.persistence.entity.UserConfigurationEntity;
+import com.mps.infrastructure.adapters.outbound.persistence.repository.UserConfigurationRepository;
+import io.micronaut.data.annotation.Repository;
+import io.micronaut.data.repository.CrudRepository;
+import io.micronaut.http.HttpRequest;
+import io.micronaut.http.HttpResponse;
+import io.micronaut.http.HttpStatus;
+import io.micronaut.http.client.HttpClient;
+import io.micronaut.http.client.annotation.Client;
+import io.micronaut.http.client.exceptions.HttpClientResponseException;
+import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
+import jakarta.inject.Inject;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.time.Instant;
+import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+@MicronautTest(transactional = false)
+@DisplayName("Pruebas de Integración HTTP: InvestmentController (/api/v1/portfolio)")
+class InvestmentControllerTest {
+
+    private static final String PASSWORD = "StrongPassword123*";
+
+    @Repository
+    interface TestAssetRepository extends CrudRepository<AssetEntity, String> {
+    }
+
+    @Inject
+    @Client("/")
+    HttpClient client;
+
+    @Inject
+    TestAssetRepository assetRepository;
+
+    @Inject
+    UserConfigurationRepository configurationRepository;
+
+    private LoginResponse registerAndLogin() {
+        String email = "portfolio_" + System.nanoTime() + "@mps.com";
+        client.toBlocking().exchange(HttpRequest.POST("/api/v1/users", new RegisterUserRequest(email, PASSWORD)),
+                UserResponse.class);
+        return client.toBlocking().retrieve(HttpRequest.POST("/api/v1/auth/login", new LoginRequest(email, PASSWORD)),
+                LoginResponse.class);
+    }
+
+    @Test
+    @DisplayName("GET /api/v1/portfolio sin token debe responder 401")
+    void shouldRejectWithoutToken() {
+        HttpClientResponseException ex = assertThrows(HttpClientResponseException.class,
+                () -> client.toBlocking().exchange(HttpRequest.GET("/api/v1/portfolio")));
+        assertEquals(HttpStatus.UNAUTHORIZED, ex.getStatus());
+    }
+
+    @Test
+    @DisplayName("GET /api/v1/portfolio con token inválido debe responder 401")
+    void shouldRejectInvalidToken() {
+        HttpClientResponseException ex = assertThrows(HttpClientResponseException.class,
+                () -> client.toBlocking().exchange(HttpRequest.GET("/api/v1/portfolio").bearerAuth("token.falso.123")));
+        assertEquals(HttpStatus.UNAUTHORIZED, ex.getStatus());
+    }
+
+    @Test
+    @DisplayName("GET /api/v1/portfolio debe devolver solo los activos del usuario autenticado")
+    void shouldReturnUserAssets() {
+        LoginResponse session = registerAndLogin();
+        UUID userId = session.getUser().getId();
+        LoginResponse other = registerAndLogin();
+
+        String ticker = "T" + (System.nanoTime() % 1_000_000);
+        AssetEntity asset = assetRepository.save(new AssetEntity(ticker, "Apple Inc.", "Tecnologia", true));
+        configurationRepository.save(new UserConfigurationEntity(UUID.randomUUID(), userId, asset, true, Instant.now()));
+        configurationRepository.save(new UserConfigurationEntity(UUID.randomUUID(), other.getUser().getId(), asset, false, Instant.now()));
+
+        HttpResponse<InvestmentController.PortfolioResponse> response = client.toBlocking().exchange(
+                HttpRequest.GET("/api/v1/portfolio").bearerAuth(session.getAccessToken()),
+                InvestmentController.PortfolioResponse.class);
+
+        assertEquals(HttpStatus.OK, response.status());
+        InvestmentController.PortfolioResponse body = response.body();
+        assertNotNull(body);
+        assertEquals(userId, body.userId());
+        assertEquals(1, body.total());
+        InvestmentController.PortfolioItem item = body.assets().get(0);
+        assertEquals(ticker, item.ticker());
+        assertEquals("Apple Inc.", item.name());
+        assertEquals("Tecnologia", item.sector());
+        assertTrue(item.alertsEnabled());
+    }
+
+    @Test
+    @DisplayName("GET /api/v1/portfolio de un usuario sin activos devuelve lista vacía")
+    void shouldReturnEmptyList() {
+        LoginResponse session = registerAndLogin();
+        InvestmentController.PortfolioResponse body = client.toBlocking().retrieve(
+                HttpRequest.GET("/api/v1/portfolio").bearerAuth(session.getAccessToken()),
+                InvestmentController.PortfolioResponse.class);
+        assertEquals(0, body.total());
+        assertTrue(body.assets().isEmpty());
+    }
+}
