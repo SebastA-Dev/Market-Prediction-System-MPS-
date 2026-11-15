@@ -107,4 +107,95 @@ class InvestmentControllerTest {
         assertEquals(0, body.total());
         assertTrue(body.assets().isEmpty());
     }
+
+    private String createAsset() {
+        String ticker = "D" + (System.nanoTime() % 1_000_000);
+        assetRepository.save(new AssetEntity(ticker, "Empresa " + ticker, "Tecnologia", true));
+        return ticker;
+    }
+
+    private void follow(UUID userId, String ticker) {
+        AssetEntity asset = assetRepository.findById(ticker).orElseThrow();
+        configurationRepository.save(new UserConfigurationEntity(UUID.randomUUID(), userId, asset, true, Instant.now()));
+    }
+
+    private InvestmentController.PortfolioResponse portfolio(String token) {
+        return client.toBlocking().retrieve(HttpRequest.GET("/api/v1/portfolio").bearerAuth(token),
+                InvestmentController.PortfolioResponse.class);
+    }
+
+    private HttpStatus deleteExpectingError(String path, String token) {
+        HttpRequest<?> request = HttpRequest.DELETE(path);
+        if (token != null) {
+            request = HttpRequest.DELETE(path).bearerAuth(token);
+        }
+        HttpRequest<?> finalRequest = request;
+        HttpClientResponseException ex = assertThrows(HttpClientResponseException.class,
+                () -> client.toBlocking().exchange(finalRequest));
+        return ex.getStatus();
+    }
+
+    @Test
+    @DisplayName("DELETE /api/v1/portfolio/{ticker} elimina el activo solo del portafolio del usuario")
+    void shouldDeleteAssetFromOwnPortfolioOnly() {
+        LoginResponse session = registerAndLogin();
+        LoginResponse other = registerAndLogin();
+        String keep = createAsset();
+        String remove = createAsset();
+        follow(session.getUser().getId(), keep);
+        follow(session.getUser().getId(), remove);
+        follow(other.getUser().getId(), remove);
+
+        HttpResponse<InvestmentController.DeleteResponse> response = client.toBlocking().exchange(
+                HttpRequest.DELETE("/api/v1/portfolio/" + remove.toLowerCase()).bearerAuth(session.getAccessToken()),
+                InvestmentController.DeleteResponse.class);
+        assertEquals(HttpStatus.OK, response.status());
+        assertEquals(remove, response.body().ticker());
+
+        InvestmentController.PortfolioResponse mine = portfolio(session.getAccessToken());
+        assertEquals(1, mine.total());
+        assertEquals(keep, mine.assets().get(0).ticker());
+
+        // El otro usuario conserva su activo y el activo sigue existiendo en 'asset'.
+        InvestmentController.PortfolioResponse theirs = portfolio(other.getAccessToken());
+        assertEquals(1, theirs.total());
+        assertEquals(remove, theirs.assets().get(0).ticker());
+        assertTrue(assetRepository.existsById(remove));
+    }
+
+    @Test
+    @DisplayName("DELETE de un activo que el usuario no sigue debe responder 404")
+    void shouldReturn404WhenAssetNotInPortfolio() {
+        LoginResponse session = registerAndLogin();
+        String ticker = createAsset();
+        assertEquals(HttpStatus.NOT_FOUND,
+                deleteExpectingError("/api/v1/portfolio/" + ticker, session.getAccessToken()));
+    }
+
+    @Test
+    @DisplayName("DELETE dos veces del mismo activo: la segunda responde 404")
+    void shouldReturn404OnSecondDelete() {
+        LoginResponse session = registerAndLogin();
+        String ticker = createAsset();
+        follow(session.getUser().getId(), ticker);
+        client.toBlocking().exchange(HttpRequest.DELETE("/api/v1/portfolio/" + ticker).bearerAuth(session.getAccessToken()));
+        assertEquals(HttpStatus.NOT_FOUND,
+                deleteExpectingError("/api/v1/portfolio/" + ticker, session.getAccessToken()));
+    }
+
+    @Test
+    @DisplayName("DELETE con ticker inválido debe responder 400")
+    void shouldReturn400ForInvalidTicker() {
+        LoginResponse session = registerAndLogin();
+        assertEquals(HttpStatus.BAD_REQUEST,
+                deleteExpectingError("/api/v1/portfolio/TICKER_DEMASIADO_LARGO_123", session.getAccessToken()));
+        assertEquals(HttpStatus.BAD_REQUEST,
+                deleteExpectingError("/api/v1/portfolio/ABC*D", session.getAccessToken()));
+    }
+
+    @Test
+    @DisplayName("DELETE sin token debe responder 401")
+    void shouldRejectDeleteWithoutToken() {
+        assertEquals(HttpStatus.UNAUTHORIZED, deleteExpectingError("/api/v1/portfolio/AAPL", null));
+    }
 }

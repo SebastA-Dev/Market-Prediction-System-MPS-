@@ -23,6 +23,7 @@ import io.micronaut.context.ApplicationContext;
 import io.micronaut.context.ApplicationContextBuilder;
 import io.micronaut.context.ApplicationContextConfigurer;
 import io.micronaut.context.annotation.ContextConfigurer;
+import io.micronaut.context.env.PropertySource;
 import io.micronaut.runtime.Micronaut;
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
@@ -47,6 +48,9 @@ public class Application {
 
     @ContextConfigurer
     public static class Configurer implements ApplicationContextConfigurer {
+
+        /** Menor que la de application*.properties, para que application-test.properties gane en las pruebas. */
+        private static final int DOTENV_PROPERTY_SOURCE_ORDER = -1000;
 
         @Override
         public void configure(@NonNull ApplicationContextBuilder builder) {
@@ -121,7 +125,9 @@ public class Application {
             props.put("micronaut.security.token.jwt.signatures.secret.generator.secret", jwtSecret);
             props.put("micronaut.security.token.generator.access-token.expiration", Integer.parseInt(jwtExpiration));
 
-            builder.properties(props);
+            // Prioridad baja: los archivos de configuración específicos de entorno
+            // (p. ej. application-test.properties con H2) pueden sobrescribir estos valores.
+            builder.propertySources(PropertySource.of("dotenv", props, DOTENV_PROPERTY_SOURCE_ORDER));
         }
 
         //TODO: Manejar un estandar en la ubicacion del .env 
