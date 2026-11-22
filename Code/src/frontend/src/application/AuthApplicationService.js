@@ -1,107 +1,94 @@
 import { IAuthUseCase } from '../domain/ports/in/IAuthUseCases.js';
 import { User } from '../domain/models/User.js';
 
-/**
- * Servicio de Aplicación: AuthApplicationService
- * Gestiona el ciclo de vida de la autenticación de usuarios contra Micronaut.
- */
+/** Gestiona el registro, la sesión y la identidad persistida por Micronaut. */
 export class AuthApplicationService extends IAuthUseCase {
-  /**
-   * @param {import('../domain/ports/out/IAuthRepositoryPort.js').IAuthRepositoryPort} authRepository
-   * @param {import('../domain/ports/out/INotificationAndStoragePorts.js').IStoragePort} storagePort
-   */
   constructor(authRepository, storagePort) {
     super();
     this.authRepository = authRepository;
     this.storagePort = storagePort;
   }
 
-  /**
-   * Inicia sesión llamando al endpoint POST /api/v1/auth/login.
-   * @param {string} email
-   * @param {string} password
-   * @returns {Promise<User>}
-   */
   async login(email, password) {
     const result = await this.authRepository.login(email, password);
-    const token = result.access_token || result.token;
-    
+    // Micronaut serializa LoginResponse como accessToken (camelCase).
+    const token = result.accessToken || result.access_token || result.token;
+    if (!token) throw new Error('El servidor no devolvió el token de autenticación.');
+
     this.storagePort.setItem('mps_auth_token', token);
-    
-    const user = new User({
-      id: result.user?.id || 'user-default',
-      email: result.user?.email || email,
-      displayName: result.user?.email?.split('@')[0] || 'Alex Wright',
-      token: token
-    });
-    
-    this.storagePort.setItem('mps_user_profile', JSON.stringify({
-      id: user.id,
-      email: user.email,
-      displayName: user.displayName,
-      riskProfile: user.riskProfile
-    }));
-    
-    return user;
+    try {
+      const identity = await this.authRepository.getMe(token);
+      const user = this._mapUser({ ...result.user, ...identity }, token);
+      this._storeProfile(user);
+      return user;
+    } catch (error) {
+      this.storagePort.removeItem('mps_auth_token');
+      throw error;
+    }
   }
 
-  /**
-   * Registra un nuevo usuario llamando al endpoint POST /api/v1/users.
-   * @param {string} email
-   * @param {string} password
-   * @returns {Promise<User>}
-   */
   async register(email, password) {
     const registered = await this.authRepository.register(email, password);
     return new User({
       id: registered.id,
       email: registered.email,
-      createdAt: registered.created_at || registered.createdAt
+      displayName: registered.email?.split('@')[0] || 'Usuario',
+      createdAt: registered.createdAt || registered.created_at
     });
   }
 
-  /**
-   * Valida la sesión activa contra el endpoint GET /api/v1/auth/me si hay token guardado.
-   * @returns {Promise<User|null>}
-   */
   async checkSession() {
     const token = this.storagePort.getItem('mps_auth_token');
-    const cachedProfile = this.storagePort.getItem('mps_user_profile');
-    
-    let defaultUser = new User({
-      id: 'usr-alex-wright',
-      email: 'alex.wright@quant.io',
-      displayName: 'Alex Wright',
-      riskProfile: 'Moderado'
-    });
+    if (!token) return this.guestUser();
 
-    if (cachedProfile) {
-      try {
-        const parsed = JSON.parse(cachedProfile);
-        defaultUser = new User({ ...parsed, token: token || null });
-      } catch (e) {
-        // Fallback a default
-      }
-    }
-
-    if (!token) {
-      return defaultUser;
+    let cached = {};
+    try {
+      cached = JSON.parse(this.storagePort.getItem('mps_user_profile') || '{}');
+    } catch (error) {
+      this.storagePort.removeItem('mps_user_profile');
     }
 
     try {
-      const me = await this.authRepository.getMe(token);
-      defaultUser.id = me.name || me.id || defaultUser.id;
-      defaultUser.email = me.email || defaultUser.email;
-      defaultUser.token = token;
-      return defaultUser;
-    } catch (err) {
-      console.warn('Token expirado o inválido, restableciendo sesión local:', err.message);
+      const identity = await this.authRepository.getMe(token);
+      const user = this._mapUser(identity, token, cached);
+      this._storeProfile(user);
+      return user;
+    } catch (error) {
       this.storagePort.removeItem('mps_auth_token');
-      return defaultUser;
+      this.storagePort.removeItem('mps_user_profile');
+      console.warn('Token expirado o inválido; sesión cerrada:', error.message);
+      return this.guestUser();
     }
+  }
+
+  _mapUser(data = {}, token = null, cached = {}) {
+    const email = data.email || cached.email || '';
+    return new User({
+      id: data.id || cached.id || null,
+      email,
+      displayName: email.split('@')[0] || 'Usuario',
+      riskProfile: '',
+      createdAt: data.createdAt || data.created_at || cached.createdAt || null,
+      token
+    });
+  }
+
+  _storeProfile(user) {
+    this.storagePort.setItem('mps_user_profile', JSON.stringify({
+      id: user.id,
+      email: user.email,
+      displayName: user.displayName,
+      riskProfile: user.riskProfile,
+      createdAt: user.createdAt
+    }));
+  }
+
+  guestUser() {
+    return new User({ id: null, email: '', displayName: 'Invitado', riskProfile: '' });
   }
 
   logout() {
     this.storagePort.removeItem('mps_auth_token');
+    this.storagePort.removeItem('mps_user_profile');
   }
 }

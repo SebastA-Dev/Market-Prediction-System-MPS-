@@ -18,7 +18,7 @@ export class HeaderComponent {
   render(state) {
     const isAdvisor = state.currentView === 'advisor';
     const unreadCount = (state.notifications || []).filter(n => !n.read).length;
-    const user = state.user || { displayName: 'Alex Wright', initials: 'AW' };
+    const user = state.user || { displayName: 'Invitado', initials: 'IN', isAuthenticated: false };
 
     return `
       <header class="fixed w-full top-0 z-40 glass-card border-b border-fintech-cardBorder/60 h-16">
@@ -104,7 +104,7 @@ export class HeaderComponent {
               <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-indigo-500 to-purple-500 text-white font-bold flex items-center justify-center text-xs shadow-md">
                 ${user.initials || 'AW'}
               </div>
-              <span class="hidden md:inline font-semibold text-slate-200" id="header-user-name">${user.displayName || 'Alex Wright'}</span>
+              <span class="hidden md:inline font-semibold text-slate-200" id="header-user-name">${user.displayName || 'Invitado'}</span>
               <i class="fas fa-chevron-down text-[10px] text-slate-400 ml-0.5"></i>
             </button>
 
@@ -114,7 +114,7 @@ export class HeaderComponent {
     `;
   }
 
-  attachEvents(container) {
+  attachEvents(container, state) {
     const brandBtn = container.querySelector('#brand-logo-btn');
     if (brandBtn) brandBtn.onclick = () => this.advisor.switchView('advisor');
 
@@ -131,6 +131,8 @@ export class HeaderComponent {
     if (clearNotifBtn) clearNotifBtn.onclick = () => this.notification.clearAll();
 
     const userProfileBtn = container.querySelector('#user-profile-header-btn');
-    if (userProfileBtn) userProfileBtn.onclick = () => this.portfolio.openModal('tracked');
+    if (userProfileBtn) userProfileBtn.onclick = () => {
+      this.portfolio.openModal(state.user?.isAuthenticated ? 'settings' : 'auth');
+    };
   }
 }

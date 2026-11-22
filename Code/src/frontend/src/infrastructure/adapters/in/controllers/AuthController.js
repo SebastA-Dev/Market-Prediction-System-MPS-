@@ -7,23 +7,27 @@ import { globalAppState } from '../state/AppState.js';
 export class AuthController {
   /**
    * @param {import('../../../../application/AuthApplicationService.js').AuthApplicationService} authService
-   * @param {import('../../../../application/UserProfileApplicationService.js').UserProfileApplicationService} profileService
    * @param {import('../../../../application/PortfolioApplicationService.js').PortfolioApplicationService} portfolioService
    */
-  constructor(authService, profileService, portfolioService) {
+  constructor(authService, portfolioService) {
     this.authService = authService;
-    this.profileService = profileService;
     this.portfolioService = portfolioService;
   }
 
   async initSession() {
+    const user = await this.authService.checkSession();
+    globalAppState.set({ user });
+    if (!user.isAuthenticated) {
+      globalAppState.set({ portfolio: [] });
+      return;
+    }
+
     try {
-      const user = await this.authService.checkSession();
-      globalAppState.set({ user });
       const portfolio = await this.portfolioService.getPortfolio();
       globalAppState.set({ portfolio });
     } catch (err) {
-      console.warn('Sesión no inicializada:', err);
+      console.warn('No se pudo cargar el portafolio:', err);
+      globalAppState.set({ portfolio: [] });
     }
   }
 
@@ -35,12 +39,16 @@ export class AuthController {
 
     try {
       const user = await this.authService.login(email, password);
-      globalAppState.set({ user });
+      globalAppState.set({ user, isUserModalOpen: true, userModalTab: 'settings', portfolio: [] });
       globalAppState.showToast(`¡Bienvenido de nuevo, ${user.displayName}!`, 'success');
-      
-      // Cargar portafolio real del usuario autenticado
-      const portfolio = await this.portfolioService.getPortfolio();
-      globalAppState.set({ portfolio, userModalTab: 'tracked' });
+
+      try {
+        const portfolio = await this.portfolioService.getPortfolio();
+        globalAppState.set({ portfolio });
+      } catch (portfolioError) {
+        console.warn('No se pudo cargar el portafolio:', portfolioError);
+        globalAppState.showToast('Sesión iniciada; no se pudieron cargar las inversiones.', 'info');
+      }
     } catch (err) {
       const msg = err.status === 401 ? 'Credenciales incorrectas' : (err.message || 'Error de inicio de sesión');
       globalAppState.showToast(msg, 'info');
@@ -63,23 +71,14 @@ export class AuthController {
     }
   }
 
-  async saveProfile(name, email, riskProfile) {
-    try {
-      const updated = await this.profileService.updateProfile({
-        displayName: name,
-        email,
-        riskProfile
-      });
-      globalAppState.set({ user: updated, isUserModalOpen: false });
-      globalAppState.showToast('Perfil actualizado correctamente.', 'success');
-    } catch (err) {
-      globalAppState.showToast(`Error al guardar perfil: ${err.message}`, 'info');
-    }
-  }
-
   logout() {
     this.authService.logout();
-    this.initSession();
+    globalAppState.set({
+      user: this.authService.guestUser(),
+      portfolio: [],
+      isUserModalOpen: false,
+      userModalTab: 'auth'
+    });
     globalAppState.showToast('Sesión cerrada.', 'info');
   }
 }

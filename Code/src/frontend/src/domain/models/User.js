@@ -3,7 +3,7 @@
  * Representa al usuario de la plataforma y su sesión autenticada.
  */
 export class User {
-  constructor({ id, email, displayName = 'Alex Wright', riskProfile = 'Moderado', createdAt = null, token = null }) {
+  constructor({ id = null, email = '', displayName = 'Invitado', riskProfile = '', createdAt = null, token = null }) {
     this.id = id;
     this.email = email;
     this.displayName = displayName;
@@ -13,7 +13,7 @@ export class User {
   }
 
   get initials() {
-    if (!this.displayName) return 'AW';
+    if (!this.displayName) return 'IN';
     const parts = this.displayName.trim().split(/\s+/);
     if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();

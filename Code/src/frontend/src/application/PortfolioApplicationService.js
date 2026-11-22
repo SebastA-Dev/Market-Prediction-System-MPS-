@@ -32,14 +32,10 @@ export class PortfolioApplicationService {
   async getPortfolio() {
     const token = this._getToken();
     if (token) {
-      try {
-        const remoteItems = await this.portfolioRepository.getPortfolio(token);
-        // Sincronizar en cache local
-        this.storagePort.setItem('mps_portfolio_cache', JSON.stringify(remoteItems));
-        return remoteItems;
-      } catch (err) {
-        console.warn('Error obteniendo portafolio remoto, recurriendo a cache:', err);
-      }
+      const remoteItems = await this.portfolioRepository.getPortfolio(token);
+      // Una sesión autenticada solo muestra datos remotos de esa cuenta.
+      this.storagePort.setItem('mps_portfolio_cache', JSON.stringify(remoteItems));
+      return remoteItems;
     }
 
     const cached = this.storagePort.getItem('mps_portfolio_cache');

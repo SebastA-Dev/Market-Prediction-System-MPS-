@@ -14,7 +14,6 @@ import { PredictIntentService } from '../application/PredictIntentService.js';
 import { PortfolioApplicationService } from '../application/PortfolioApplicationService.js';
 import { AuthApplicationService } from '../application/AuthApplicationService.js';
 import { NotificationApplicationService } from '../application/NotificationApplicationService.js';
-import { UserProfileApplicationService } from '../application/UserProfileApplicationService.js';
 
 // ==============================================================================
 // 3. Capa de Infraestructura (Adaptadores de Entrada: Estado y Controladores)
@@ -54,13 +53,12 @@ class AppBootstrap {
     this.predictService = new PredictIntentService(this.predictionAdapter);
     this.portfolioService = new PortfolioApplicationService(this.portfolioAdapter, this.storageAdapter);
     this.authService = new AuthApplicationService(this.authAdapter, this.storageAdapter);
-    this.userProfileService = new UserProfileApplicationService(this.authAdapter, this.storageAdapter);
     this.notificationService = new NotificationApplicationService(this.notificationAdapter, this.storageAdapter);
 
     // 3. Instanciación de Controladores Primarios (Inbound Adapters)
     this.advisorController = new AdvisorController(this.predictService, this.portfolioService);
     this.portfolioController = new PortfolioController(this.portfolioService);
-    this.authController = new AuthController(this.authService, this.userProfileService, this.portfolioService);
+    this.authController = new AuthController(this.authService, this.portfolioService);
     this.notificationController = new NotificationController(this.notificationService);
 
     // 4. Instanciación de Componentes de Interfaz
@@ -132,7 +130,7 @@ class AppBootstrap {
   }
 
   attachEvents(state) {
-    this.headerComponent.attachEvents(this.rootEl);
+    this.headerComponent.attachEvents(this.rootEl, state);
     this.searchPromptComponent.attachEvents(this.rootEl);
     this.resultsComponent.attachEvents(this.rootEl, state);
     this.trustDrawerComponent.attachEvents(this.rootEl);

@@ -1,15 +1,8 @@
 import { IUserProfileUseCase } from '../domain/ports/in/IAuthUseCases.js';
 import { User } from '../domain/models/User.js';
 
-/**
- * Servicio de Aplicación: UserProfileApplicationService
- * Permite consultar y modificar ajustes de perfil de usuario.
- */
+/** Consulta la identidad desde el backend; el perfil nunca se inventa en el navegador. */
 export class UserProfileApplicationService extends IUserProfileUseCase {
-  /**
-   * @param {import('../domain/ports/out/IAuthRepositoryPort.js').IAuthRepositoryPort} authRepository
-   * @param {import('../domain/ports/out/INotificationAndStoragePorts.js').IStoragePort} storagePort
-   */
   constructor(authRepository, storagePort) {
     super();
     this.authRepository = authRepository;
@@ -17,43 +10,37 @@ export class UserProfileApplicationService extends IUserProfileUseCase {
   }
 
   async getProfile() {
-    const cached = this.storagePort.getItem('mps_user_profile');
-    if (cached) {
-      try {
-        return new User(JSON.parse(cached));
-      } catch (e) {}
+    const token = this.storagePort.getItem('mps_auth_token');
+    if (!token) return new User({ id: null, displayName: 'Invitado' });
+
+    const identity = await this.authRepository.getMe(token);
+    let cached = {};
+    try {
+      cached = JSON.parse(this.storagePort.getItem('mps_user_profile') || '{}');
+    } catch (error) {
+      this.storagePort.removeItem('mps_user_profile');
     }
-    return new User({
-      id: 'usr-alex-wright',
-      email: 'alex.wright@quant.io',
-      displayName: 'Alex Wright',
-      riskProfile: 'Moderado'
+
+    const email = identity.email || '';
+    const user = new User({
+      id: identity.id || null,
+      email,
+      displayName: email.split('@')[0] || 'Usuario',
+      riskProfile: '',
+      createdAt: cached.createdAt || null,
+      token
     });
+    this.storagePort.setItem('mps_user_profile', JSON.stringify({
+      id: user.id,
+      email: user.email,
+      displayName: user.displayName,
+      riskProfile: user.riskProfile,
+      createdAt: user.createdAt
+    }));
+    return user;
   }
 
-  async updateProfile(profileData) {
-    const token = this.storagePort.getItem('mps_auth_token');
-    if (token) {
-      try {
-        await this.authRepository.updateProfile(token, profileData);
-      } catch (err) {
-        console.info('Endpoint remoto de actualización de perfil no disponible aún:', err.message);
-      }
-    }
-
-    const current = await this.getProfile();
-    const updated = new User({
-      ...current,
-      ...profileData
-    });
-
-    this.storagePort.setItem('mps_user_profile', JSON.stringify({
-      id: updated.id,
-      email: updated.email,
-      displayName: updated.displayName,
-      riskProfile: updated.riskProfile
-    }));
-
-    return updated;
+  async updateProfile() {
+    throw new Error('El backend todavía no ofrece un endpoint para modificar el perfil.');
   }
 }

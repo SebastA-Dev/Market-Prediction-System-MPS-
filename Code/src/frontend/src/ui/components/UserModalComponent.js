@@ -17,10 +17,11 @@ export class UserModalComponent {
     const isOpen = state.isUserModalOpen;
     const activeTab = state.userModalTab || 'tracked';
     const user = state.user || {
-      displayName: 'Alex Wright',
-      email: 'alex.wright@quant.io',
-      riskProfile: 'Moderado',
-      initials: 'AW',
+      id: null,
+      displayName: 'Invitado',
+      email: '',
+      riskProfile: '',
+      initials: 'IN',
       isAuthenticated: false
     };
 
@@ -65,7 +66,7 @@ export class UserModalComponent {
               <i class="fas fa-vault"></i> Mis Inversiones Guardadas (<span id="user-tracked-count">${portfolio.length}</span>)
             </button>
             <button id="tab-btn-settings" class="flex-1 py-3 px-4 border-b-2 ${activeTab === 'settings' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-slate-400 hover:text-white'} transition-all flex items-center justify-center gap-2 cursor-pointer">
-              <i class="fas fa-sliders"></i> Ajustes de Perfil
+              <i class="fas fa-id-card"></i> Mi Perfil
             </button>
             <button id="tab-btn-auth" class="flex-1 py-3 px-4 border-b-2 ${activeTab === 'auth' ? 'border-purple-500 text-purple-400' : 'border-transparent text-slate-400 hover:text-white'} transition-all flex items-center justify-center gap-2 cursor-pointer">
               <i class="fas fa-key"></i> Sesión Micronaut
@@ -112,44 +113,43 @@ export class UserModalComponent {
             </div>
           </div>
 
-          <!-- Modal Tab 2: Profile Settings -->
+          <!-- Modal Tab 2: Datos reales de la cuenta recibidos de Micronaut -->
           <div id="user-tab-settings" class="p-6 overflow-y-auto custom-scrollbar space-y-5 ${activeTab === 'settings' ? '' : 'hidden'}">
-            <div class="space-y-4">
-              <div>
-                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Nombre Completo</label>
-                <input type="text" id="input-profile-name" value="${user.displayName}" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none focus:border-indigo-500 transition-all">
+            ${user.isAuthenticated ? `
+              <div class="space-y-4">
+                <div>
+                  <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Correo de la cuenta</label>
+                  <div class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white">${user.email}</div>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Identificador de usuario</label>
+                  <div class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono break-all">${user.id || 'No disponible'}</div>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Cuenta creada</label>
+                  <div class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white">${user.createdAt ? new Date(user.createdAt).toLocaleString() : 'Verificada por el servicio de autenticación'}</div>
+                </div>
+                <p class="text-[11px] text-slate-500">Estos datos provienen de la cuenta autenticada en el backend.</p>
               </div>
-              <div>
-                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Correo Electrónico</label>
-                <input type="email" id="input-profile-email" value="${user.email}" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none focus:border-indigo-500 transition-all">
-              </div>
-              <div>
-                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Perfil de Riesgo Inversionista</label>
-                <select id="input-profile-risk" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none focus:border-indigo-500 transition-all">
-                  <option value="Moderado" ${user.riskProfile === 'Moderado' ? 'selected' : ''}>Moderado - Crecimiento Balanceado (Recomendado)</option>
-                  <option value="Conservador" ${user.riskProfile === 'Conservador' ? 'selected' : ''}>Conservador - Preservación de Capital</option>
-                  <option value="Agresivo" ${user.riskProfile === 'Agresivo' ? 'selected' : ''}>Agresivo - Asimetría Tecnológica / IA</option>
-                </select>
-              </div>
-              <div class="pt-2 border-t border-slate-800 flex justify-between items-center text-xs">
-                <span class="text-slate-300 font-semibold">Notificaciones de Cambios de Métricas</span>
-                <input type="checkbox" checked class="w-4 h-4 accent-emerald-500 rounded cursor-pointer">
-              </div>
-            </div>
-
-            <div class="pt-4 flex justify-end gap-3">
-              <button id="btn-save-profile" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs transition-all shadow-md cursor-pointer">
-                Guardar Cambios
-              </button>
-            </div>
+            ` : `
+              <div class="text-center py-8 text-xs text-slate-400">Inicia sesión para consultar los datos de tu perfil.</div>
+            `}
           </div>
 
           <!-- Modal Tab 3: Micronaut Auth -->
           <div id="user-tab-auth" class="p-6 overflow-y-auto custom-scrollbar space-y-5 ${activeTab === 'auth' ? '' : 'hidden'}">
             <div class="p-3.5 rounded-xl bg-purple-500/10 border border-purple-500/20 text-xs text-purple-300 leading-relaxed">
-              <i class="fas fa-shield-cat mr-1"></i> <strong>Integración con Backend Micronaut (Puerto 8080):</strong> Inicia sesión o regístrate para sincronizar tu portafolio real en PostgreSQL mediante tokens JWT firmados.
+              <i class="fas fa-shield-cat mr-1"></i> <strong>Integración con Backend Micronaut (Puerto 8080):</strong> Inicia sesión o regístrate para validar tu cuenta en PostgreSQL y consultar los datos asociados mediante JWT.
             </div>
 
+            ${user.isAuthenticated ? `
+              <div class="p-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 space-y-2 text-xs">
+                <div class="text-emerald-300 font-bold">Sesión autenticada</div>
+                <div class="text-slate-300">${user.email}</div>
+                <div class="text-slate-500 font-mono break-all">${user.id || ''}</div>
+                <button id="btn-logout-session" class="mt-2 px-4 py-1.5 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs font-bold hover:bg-rose-500/30 transition-all cursor-pointer">Cerrar Sesión</button>
+              </div>
+            ` : `
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <!-- Login Form -->
               <div class="glass-card p-4 rounded-2xl border border-slate-800 space-y-3">
@@ -187,15 +187,7 @@ export class UserModalComponent {
                 </button>
               </div>
             </div>
-
-            ${user.isAuthenticated ? `
-              <div class="pt-3 border-t border-slate-800 flex justify-between items-center">
-                <span class="text-xs text-emerald-400"><i class="fas fa-check-circle"></i> Sesión activa</span>
-                <button id="btn-logout-session" class="px-4 py-1.5 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs font-bold hover:bg-rose-500/30 transition-all cursor-pointer">
-                  Cerrar Sesión
-                </button>
-              </div>
-            ` : ''}
+            `}
           </div>
 
         </div>
@@ -231,17 +223,6 @@ export class UserModalComponent {
         if (ticker) this.portfolio.deleteItem(ticker);
       };
     });
-
-    // Guardar perfil
-    const saveProfileBtn = container.querySelector('#btn-save-profile');
-    if (saveProfileBtn) {
-      saveProfileBtn.onclick = () => {
-        const name = container.querySelector('#input-profile-name')?.value;
-        const email = container.querySelector('#input-profile-email')?.value;
-        const risk = container.querySelector('#input-profile-risk')?.value;
-        this.auth.saveProfile(name, email, risk);
-      };
-    }
 
     // Login
     const loginBtn = container.querySelector('#btn-exec-login');
