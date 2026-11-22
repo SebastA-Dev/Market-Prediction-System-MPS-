@@ -29,6 +29,9 @@ FROM eclipse-temurin:21-jre-jammy
 
 WORKDIR /app
 
+# Instalar utilidades para healthcheck del contenedor
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
+
 # Crear usuario sin privilegios para ejecución segura
 RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
 
