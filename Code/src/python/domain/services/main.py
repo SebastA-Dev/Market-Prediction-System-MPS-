@@ -25,6 +25,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from fastapi import BackgroundTasks, FastAPI, HTTPException, Query, Response, status
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, field_validator
 import numpy as np
 import uvicorn
@@ -33,7 +34,7 @@ logger = logging.getLogger(__name__)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
 # Modelos y servicios del dominio
-from Code.src.python.domain.models.market import (
+from domain.models.market import (
     IntentPredictionLog,
     IntentType,
     MarketSignalPayload,
@@ -41,7 +42,7 @@ from Code.src.python.domain.models.market import (
     SignalType,
 )
 
-from Code.src.python.infrastructure.api.routers import (
+from infrastructure.api.routers import (
     CoinGecko as cg,
     Finnhub as fn,
     FMP as f,
@@ -49,36 +50,36 @@ from Code.src.python.infrastructure.api.routers import (
     Polygon as p,
     YahooFinance as yf,
 )
-from Code.src.python.infrastructure.api.errors import UPSTREAM_ERROR_RESPONSES
-from Code.src.python.domain.services.data_binarization.qlib_bin_dump import (
+from infrastructure.api.errors import UPSTREAM_ERROR_RESPONSES
+from domain.services.data_binarization.qlib_bin_dump import (
     QlibBinaryDumpService,
 )
-from Code.src.python.domain.services.data_cleaning.clean_market_data import (
+from domain.services.data_cleaning.clean_market_data import (
     DataCleaningService,
 )
-from Code.src.python.domain.services.data_cleaning.data_acquisition import (
+from domain.services.data_cleaning.data_acquisition import (
     DataAcquisitionService,
 )
-from Code.src.python.domain.services.inference.risk_management import (
+from domain.services.inference.risk_management import (
     RiskManagementService,
 )
-from Code.src.python.domain.services.inference.signal_generator import (
+from domain.services.inference.signal_generator import (
     SignalGenerationEngine,
 )
-from Code.src.python.domain.services.inference.statistical_validator import (
+from domain.services.inference.statistical_validator import (
     StatisticalValidator,
 )
-from Code.src.python.domain.services.models_training.train_galformer import (
+from domain.services.models_training.train_galformer import (
     GalformerTrainer,
 )
-from Code.src.python.domain.services.models_training.train_master import MASTERTrainer
-from Code.src.python.domain.services.models_training.train_qlib_alpha import (
+from domain.services.models_training.train_master import MASTERTrainer
+from domain.services.models_training.train_qlib_alpha import (
     QlibAlphaTrainer,
 )
-from Code.src.python.domain.services.storage.mongo_repository import (
+from domain.services.storage.mongo_repository import (
     MongoMarketRepository,
 )
-from Code.src.python.domain.services.storage.redis_publisher import RedisSignalPublisher
+from domain.services.storage.redis_publisher import RedisSignalPublisher
 
 # Configuración de rutas
 BASE_DIR = Path(__file__).resolve().parent
@@ -111,6 +112,14 @@ app = FastAPI(
     description="Servicio de IA cuantitativa, inferencia de modelos (MASTER & Galformer), ingesta y validación estadística",
     version="1.0.0",
     lifespan=lifespan,
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 

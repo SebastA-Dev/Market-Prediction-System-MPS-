@@ -1,0 +1,19 @@
+{
+  "name": "mps-frontend",
+  "version": "1.0.0",
+  "description": "Frontend de NexGenQuant bajo arquitectura hexagonal integrado con microservicios Python (FastAPI) y Java (Micronaut)",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve -l 3000 ."
+  },
+  "keywords": [
+    "fintech",
+    "hexagonal-architecture",
+    "ports-and-adapters",
+    "fastapi",
+    "micronaut",
+    "quantitative-finance"
+  ],
+  "author": "MPS Team",
+  "license": "MIT"
+}

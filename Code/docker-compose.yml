@@ -80,6 +80,12 @@ services:
         condition: service_healthy
     networks:
       - mps_network
+    healthcheck:
+      test: ["CMD", "curl", "-s", "http://localhost:8080/api/v1/auth/login"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
 
   # ==============================================================================
   # b. Servicio Python (FastAPI - Pipeline Analítico, Modelos ML & Inferencia)
@@ -114,6 +120,38 @@ services:
         condition: service_healthy
     networks:
       - mps_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # ==============================================================================
+  # e. Servicio Frontend (Nginx Alpine - Arquitectura Hexagonal / SPA)
+  # Se inicia una vez que los microservicios backend (Python y Java) estén saludables
+  # ==============================================================================
+  frontend-service:
+    build:
+      context: ./src/frontend
+      dockerfile: Dockerfile
+    container_name: mps_frontend_service
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+    depends_on:
+      java-service:
+        condition: service_healthy
+      python-service:
+        condition: service_healthy
+    networks:
+      - mps_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
 
 networks:
   mps_network:
